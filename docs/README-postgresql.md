@@ -1,5 +1,8 @@
-# postgres 설치
-```
+# PostgreSQL 설치 및 설정
+
+## 설치
+
+```bash
 sudo apt install curl ca-certificates
 sudo install -d /usr/share/postgresql-common/pgdg
 sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
@@ -7,54 +10,65 @@ sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresq
 sudo apt update
 sudo apt -y install postgresql
 ```
-### 상태 확인
-```
+
+## 상태 확인
+
+```bash
 sudo systemctl status postgres.service
 ```
-### role 생성
 
-```
+## Role 생성 및 비밀번호 변경
+
+```bash
 sudo -i -u postgres
 psql
 CREATE ROLE project WITH LOGIN PASSWORD 'postgres';
-```
-### pwd 변경
-```
 ALTER USER postgres WITH PASSWORD 'postgres';
 ```
-### database 생성
-```
+
+## 데이터베이스 생성 및 접속
+
+```bash
 create database upbit;
 \list
-```
-### database 접속
-```
 \c upbit
 ```
-### table 목록 조회
-```
-\dt 
-```
-## 외부접속 허용 설정
-```
-cd /etc/postgresql/17/main
-sudo vim postgresql.conf 
-```
-### 60번째 줄 수정 - 외부접속 허용
-```
-listen_addresses = '0.0.0.0'            # what IP address(es) to listen on;
+
+## 테이블 목록 조회
+
+```bash
+\dt
 ```
 
+## 외부 접속 허용 설정
+
+### `postgresql.conf` 수정
+
+```bash
+cd /etc/postgresql/17/main
+sudo vim postgresql.conf
 ```
-sudo vim pg_hba.conf 
+
+60번째 줄 수정:
+
 ```
-### host 추가 - 외부 접속 허용  
+listen_addresses = '0.0.0.0'
 ```
-# IPv4 local connections:
-host    all             all             127.0.0.1/32            scram-sha-256
+
+### `pg_hba.conf` 수정
+
+```bash
+sudo vim pg_hba.conf
+```
+
+다음 줄 추가:
+
+```
 host    all             all             0.0.0.0/0            scram-sha-256
 ```
-### postgres 재시작
-```
+
+## PostgreSQL 재시작
+
+```bash
 sudo systemctl restart postgresql
 ```
