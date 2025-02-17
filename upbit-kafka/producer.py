@@ -33,11 +33,11 @@ def get_kafka_producer():
         logging.exception("Failed to create Kafka Producer.")
         raise e
 
-def get_coin_symbols():
+def get_coin_symbols() -> list:
     """
     업비트 REST API를 통해 'KRW-'로 시작하는 코인 심볼 목록을 가져옵니다.
     
-    :return: 코인 심볼 리스트
+    - return: 코인 심볼 리스트
     """
     url = "https://api.upbit.com/v1/market/all"
     try:
@@ -72,10 +72,8 @@ async def subscribe_upbit(producer):
                 while True:
                     data = await websocket.recv()
                     message = json.loads(data)
-                    # 메시지에 'code' 키가 없으면 'unknown' 사용
                     key = message.get("code", "unknown")
                     producer.produce(KAFKA_TOPIC, key=key, value=json.dumps(message))
-                    # 즉시 전송을 위해 poll(0)
                     producer.poll(0)
                     logging.info(f"Sent message to Kafka with key: {key}")
         except websockets.ConnectionClosed as e:
