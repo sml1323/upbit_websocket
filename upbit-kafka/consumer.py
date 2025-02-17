@@ -27,7 +27,7 @@ def create_kafka_consumer():
     """
     Kafka 설정을 읽어와 Consumer 인스턴스를 생성합니다.
     
-    :return: Kafka Consumer 인스턴스
+    - return: Kafka Consumer 인스턴스
     """
     config = {
         'bootstrap.servers': KAFKA_SERVERS,
@@ -65,17 +65,8 @@ def create_db_connection():
 def insert_trade_data(conn, data):
     """
     메시지 데이터에서 필요한 필드를 추출하여 TimescaleDB의 trade_data 테이블에 삽입합니다.
-    
-    테이블 스키마:
-        CREATE TABLE trade_data (
-            time TIMESTAMPTZ NOT NULL,
-            code TEXT NOT NULL,
-            trade_price NUMERIC,
-            trade_volume NUMERIC
-        );
-    
-    :param conn: TimescaleDB 연결 객체
-    :param data: Kafka 메시지에서 디코딩한 딕셔너리 데이터
+    - param conn: TimescaleDB 연결 객체
+    - param data: Kafka 메시지에서 디코딩한 딕셔너리 데이터
     """
     try:
         # 업비트 ticker 메시지에서 trade_timestamp (ms 단위), code, trade_price, trade_volume 추출
