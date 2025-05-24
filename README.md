@@ -142,15 +142,3 @@ localhost:8081 을 통해 웹 접속
 ---
 
 
-## **결과**
-- 업비트 거래 데이터가 **Kafka → PostgreSQL(TimescaleDB) → BigQuery**로 원활하게 전송됨
-- Apache Airflow를 활용하여 **자동화된 ETL 프로세스**가 구현됨
-- BigQuery에서 **데이터 분석 및 시각화** 가능
-
----
-
-## **추가 개선 사항**
-- **Kafka Streams 적용**하여 데이터 변환 성능 개선
-- **Google Cloud Functions**를 활용한 이벤트 기반 데이터 처리
-
----
