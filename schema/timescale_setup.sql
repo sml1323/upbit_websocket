@@ -234,7 +234,7 @@ BEGIN
         'hypertable_creation' as check_name,
         CASE WHEN EXISTS(
             SELECT 1 FROM timescaledb_information.hypertables 
-            WHERE table_name = 'ticker_data'
+            WHERE hypertable_name = 'ticker_data'
         ) THEN 'PASS' ELSE 'FAIL' END as status,
         'TimescaleDB hypertable setup' as details;
     

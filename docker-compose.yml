@@ -1,0 +1,154 @@
+# Docker Compose file for Upbit WebSocket Analytics Platform
+
+services:
+  # Upbit WebSocket Producer
+  upbit-producer:
+    build:
+      context: ./upbit-kafka
+      dockerfile: Dockerfile.producer
+    container_name: upbit-producer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      - KAFKA_SERVERS=kafka:9092
+      - KAFKA_TOPIC=upbit_ticker
+    networks:
+      - upbit-network
+    restart: always
+
+  # Upbit Kafka Consumer
+  upbit-consumer:
+    build:
+      context: ./upbit-kafka
+      dockerfile: Dockerfile.consumer
+    container_name: upbit-consumer
+    depends_on:
+      kafka:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - KAFKA_SERVERS=kafka:9092
+      - KAFKA_TOPIC=upbit_ticker
+      - KAFKA_GROUP_ID=default_group
+      - TIMESCALEDB_HOST=timescaledb
+      - TIMESCALEDB_PORT=5432
+      - TIMESCALEDB_DBNAME=upbit_analytics
+      - TIMESCALEDB_USER=upbit_user
+      - TIMESCALEDB_PASSWORD=upbit_password
+    networks:
+      - upbit-network
+    restart: always
+  # TimescaleDB - 시계열 데이터베이스
+  timescaledb:
+    image: timescale/timescaledb:2.14.2-pg13
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: upbit_user
+      POSTGRES_PASSWORD: upbit_password
+      POSTGRES_DB: upbit_analytics
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./schema:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "upbit_user", "-d", "upbit_analytics"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - upbit-network
+
+  # Zookeeper - Kafka 클러스터 관리
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - upbit-network
+
+  # Kafka - 메시지 브로커
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_CREATE_TOPICS: "upbit_ticker:1:1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--zookeeper", "zookeeper:2181"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - upbit-network
+
+  # MCP Server - LLM 연동 서버
+  mcp-server:
+    build:
+      context: ./db-mcp-server
+      dockerfile: Dockerfile
+    container_name: mcp-server
+    ports:
+      - "9093:9092"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - MCP_SERVER_PORT=9092
+      - DATABASE_URL=postgresql://upbit_user:upbit_password@timescaledb:5432/upbit_analytics
+    volumes:
+      - ./db-mcp-server/config.upbit.json:/app/config.json:ro
+    restart: always
+    networks:
+      - upbit-network
+
+  # Redis - 캐시 및 세션 관리 (옵션)
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - upbit-network
+
+volumes:
+  timescaledb-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  upbit-network:
+    driver: bridge
