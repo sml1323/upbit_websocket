@@ -11,8 +11,8 @@ from typing import Dict, Any, Optional
 from openai import OpenAI
 
 # 설정
-MCP_SERVER_URL = "http://localhost:9092"
-DB_CONNECTION_ID = "upbit_timescale"
+MCP_SERVER_URL = "http://localhost:9093"
+DB_CONNECTION_ID = "upbit_analytics"
 
 class UpbitLLMAnalytics:
     def __init__(self, openai_api_key: str, mcp_url: str):
@@ -41,7 +41,7 @@ class UpbitLLMAnalytics:
             }
             
             response = self.session.post(
-                f"{self.mcp_url}/v1/execute",
+                f"{self.mcp_url}/query",
                 json=payload,
                 headers={"Content-Type": "application/json"}
             )

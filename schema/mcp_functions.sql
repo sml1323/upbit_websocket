@@ -90,8 +90,8 @@ RETURNS TABLE (
     volume_change DECIMAL,
     momentum TEXT,
     market_sentiment TEXT,
-    total_rising INTEGER,
-    total_falling INTEGER
+    total_rising BIGINT,
+    total_falling BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -116,10 +116,10 @@ BEGIN
     ),
     market_stats AS (
         SELECT 
-            COUNT(*) FILTER (WHERE change_rate > 0) as rising_count,
-            COUNT(*) FILTER (WHERE change_rate < 0) as falling_count,
+            COUNT(*) FILTER (WHERE c.change_rate > 0) as rising_count,
+            COUNT(*) FILTER (WHERE c.change_rate < 0) as falling_count,
             COUNT(*) as total_count
-        FROM current_data
+        FROM current_data c
     ),
     ranked_data AS (
         SELECT 
@@ -271,9 +271,9 @@ BEGIN
         a.price_chg,
         a.desc_text
     FROM (
-        SELECT * FROM volume_anomalies WHERE severity != 'low'
+        SELECT * FROM volume_anomalies WHERE volume_anomalies.severity != 'low'
         UNION ALL
-        SELECT * FROM price_anomalies WHERE severity != 'low'
+        SELECT * FROM price_anomalies WHERE price_anomalies.severity != 'low'
     ) a
     ORDER BY 
         CASE a.severity 
@@ -293,10 +293,10 @@ $$ LANGUAGE plpgsql;
 -- 전체 시장 요약
 CREATE OR REPLACE FUNCTION get_market_overview()
 RETURNS TABLE (
-    total_coins INTEGER,
-    rising_coins INTEGER,
-    falling_coins INTEGER,
-    neutral_coins INTEGER,
+    total_coins BIGINT,
+    rising_coins BIGINT,
+    falling_coins BIGINT,
+    neutral_coins BIGINT,
     market_sentiment TEXT,
     top_gainer TEXT,
     top_loser TEXT,
