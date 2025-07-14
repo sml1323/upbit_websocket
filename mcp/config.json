@@ -1,0 +1,24 @@
+{
+  "connections": [
+    {
+      "id": "upbit_timescale",
+      "type": "postgres", 
+      "host": "localhost",
+      "port": 5432,
+      "name": "coin",
+      "user": "postgres",
+      "password": "postgres",
+      "query_timeout": 30,
+      "max_open_conns": 10,
+      "max_idle_conns": 5,
+      "conn_max_lifetime_seconds": 3600,
+      "conn_max_idle_time_seconds": 300
+    }
+  ],
+  "server": {
+    "host": "localhost",
+    "port": 9092,
+    "cors_origins": ["*"],
+    "debug": true
+  }
+}
