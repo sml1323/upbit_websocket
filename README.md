@@ -48,6 +48,65 @@
 ## **설치 및 실행 방법**
 
 ### **🚀 빠른 시작 (자동 배포)**
+
+#### **새 세션 시작**
+```bash
+# 모든 서비스 한번에 시작
+./quick_start.sh
+
+# 연결 테스트
+python test_mcp_connection.py
+```
+
+#### **개별 서비스 실행**
+```bash
+# 1. 통합 서비스 (권장)
+docker compose -f mcp-compose.yml up -d
+
+# 2. 개별 서비스 
+docker compose -f timescaledb-compose.yml up -d  # TimescaleDB만
+docker compose -f kafka-compose.yml up -d        # Kafka만
+```
+
+#### **데이터 파이프라인 실행**
+```bash
+# Producer 시작 (Upbit WebSocket → Kafka)
+python upbit-kafka/producer.py &
+
+# Consumer 시작 (Kafka → TimescaleDB)
+python upbit-kafka/consumer.py
+```
+
+### **📋 현재 구성 상태 (Week 2 완료)**
+
+#### **✅ 완료된 기능**
+- **22필드 스키마**: 완전한 Upbit 데이터 저장
+- **실시간 파이프라인**: WebSocket → Kafka → TimescaleDB
+- **Continuous Aggregates**: 1분/5분/1시간 집계
+- **MCP 서버**: FreePeak/db-mcp-server + TimescaleDB 연동
+- **Docker 통합**: 모든 서비스 자동 배포
+
+#### **🔧 이용 가능한 서비스**
+- **TimescaleDB**: localhost:5432
+- **MCP Server**: localhost:9093
+- **Kafka**: localhost:9092
+
+### **🚨 문제 해결**
+
+자세한 문제 해결 가이드: [SETUP_GUIDE.md](SETUP_GUIDE.md)
+
+#### **흔한 문제**
+```bash
+# MCP 서버 연결 실패
+docker restart upbit-mcp-server
+
+# TimescaleDB 연결 실패  
+docker restart timescaledb
+
+# 전체 초기화
+docker compose -f mcp-compose.yml down
+./quick_start.sh
+```
 ```bash
 # 1. 환경 설정
 pip install -r requirements.txt

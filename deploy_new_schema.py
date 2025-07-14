@@ -14,9 +14,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database configuration
-DB_NAME = os.getenv("TIMESCALEDB_DBNAME", "coin")
-DB_USER = os.getenv("TIMESCALEDB_USER", "postgres")
-DB_PASSWORD = os.getenv("TIMESCALEDB_PASSWORD", "postgres")
+DB_NAME = os.getenv("TIMESCALEDB_DBNAME", "upbit_analytics")
+DB_USER = os.getenv("TIMESCALEDB_USER", "upbit_user")
+DB_PASSWORD = os.getenv("TIMESCALEDB_PASSWORD", "upbit_password")
 DB_HOST = os.getenv("TIMESCALEDB_HOST", "localhost")
 DB_PORT = os.getenv("TIMESCALEDB_PORT", "5432")
 
