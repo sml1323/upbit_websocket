@@ -2,12 +2,16 @@ import os
 import json
 import logging
 from datetime import datetime, timezone
-from confluent_kafka import Consumer, KafkaException, KafkaError
+from typing import Dict, Any, Optional
+from decimal import Decimal, InvalidOperation
+from confluent_kafka import Consumer, KafkaException, KafkaError, Message
 from dotenv import load_dotenv
 import psycopg2
-
+from psycopg2.extensions import connection as Connection
+from psycopg2 import sql
 
 load_dotenv()
+
 KAFKA_SERVERS = os.getenv("KAFKA_SERVERS", "localhost:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "upbit_ticker")
 KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "default_group")
@@ -17,18 +21,29 @@ DB_PASSWORD = os.getenv("TIMESCALEDB_PASSWORD", "postgres")
 DB_HOST = os.getenv("TIMESCALEDB_HOST", "localhost")
 DB_PORT = os.getenv("TIMESCALEDB_PORT", "5432")
 
-# 로깅 설정
+POLL_TIMEOUT = 1.0
+INSERT_QUERY = """
+    INSERT INTO ticker_data (
+        time, code, type, opening_price, high_price, low_price, trade_price, 
+        prev_closing_price, change, change_price, signed_change_price, 
+        change_rate, signed_change_rate, trade_volume, acc_trade_volume, 
+        acc_trade_price, ask_bid, acc_ask_volume, acc_bid_volume, 
+        acc_trade_price_24h, acc_trade_volume_24h, highest_52_week_price, 
+        highest_52_week_date, lowest_52_week_price, lowest_52_week_date, 
+        market_state, market_warning, is_trading_suspended, delisting_date, 
+        trade_date, trade_time, trade_timestamp, timestamp, stream_type
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    )
+"""
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-def create_kafka_consumer():
-    """
-    Kafka 설정을 읽어와 Consumer 인스턴스를 생성합니다.
-    
-    - return: Kafka Consumer 인스턴스
-    """
+def create_kafka_consumer() -> Consumer:
     config = {
         'bootstrap.servers': KAFKA_SERVERS,
         'group.id': KAFKA_GROUP_ID,
@@ -42,12 +57,9 @@ def create_kafka_consumer():
         return consumer
     except Exception as e:
         logging.exception("Failed to create Kafka Consumer")
-        raise e
+        raise
 
-def create_db_connection():
-    """
-    TimescaleDB에 연결합니다.
-    """
+def create_db_connection() -> Connection:
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME,
@@ -60,68 +72,112 @@ def create_db_connection():
         return conn
     except Exception as e:
         logging.exception("Failed to connect to TimescaleDB.")
-        raise e
+        raise
 
-def insert_trade_data(conn, data):
-    """
-    메시지 데이터에서 필요한 필드를 추출하여 TimescaleDB의 trade_data 테이블에 삽입합니다.
-    - param conn: TimescaleDB 연결 객체
-    - param data: Kafka 메시지에서 디코딩한 딕셔너리 데이터
-    """
+def parse_date_string(date_str: str) -> Optional[str]:
+    """Parse date string from format YYYY-MM-DD to DATE type."""
     try:
-        # 업비트 ticker 메시지에서 trade_timestamp (ms 단위), code, trade_price, trade_volume 추출
+        if date_str and len(date_str) == 10:
+            return date_str
+        return None
+    except:
+        return None
+
+def insert_ticker_data(conn: Connection, data: Dict[str, Any]) -> None:
+    """Insert complete ticker data with all 22 fields."""
+    try:
+        # Parse timestamp - use trade_timestamp as primary time source
         trade_ts = data.get("trade_timestamp")
         if trade_ts:
             ts = int(trade_ts)
-            trade_time = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
+            time = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
         else:
-            trade_time = datetime.now(timezone.utc)
-        code = data.get("code", "unknown").replace("KRW-", "")
-        trade_price = data.get("trade_price")
-        trade_volume = data.get("trade_volume")
+            time = datetime.now(timezone.utc)
         
-        cur = conn.cursor()
-        query = """
-            INSERT INTO trade_data (time, code, trade_price, trade_volume)
-            VALUES (%s, %s, %s, %s)
-        """
-        cur.execute(query, (trade_time, code, trade_price, trade_volume))
-        conn.commit()
-        cur.close()
-        logging.info(f"Inserted trade data: code={code}, time={trade_time}, price={trade_price}, volume={trade_volume}")
+        # Extract all fields with proper type conversion and validation
+        values = (
+            time,  # time
+            data.get("code", "UNKNOWN"),  # code (keep KRW- prefix)
+            data.get("type", "ticker"),  # type
+            float(data.get("opening_price", 0)),  # opening_price
+            float(data.get("high_price", 0)),  # high_price
+            float(data.get("low_price", 0)),  # low_price
+            float(data.get("trade_price", 0)),  # trade_price
+            float(data.get("prev_closing_price", 0)),  # prev_closing_price
+            data.get("change", "EVEN"),  # change (ENUM)
+            float(data.get("change_price", 0)),  # change_price
+            float(data.get("signed_change_price", 0)),  # signed_change_price
+            float(data.get("change_rate", 0)),  # change_rate
+            float(data.get("signed_change_rate", 0)),  # signed_change_rate
+            float(data.get("trade_volume", 0)),  # trade_volume
+            float(data.get("acc_trade_volume", 0)),  # acc_trade_volume
+            float(data.get("acc_trade_price", 0)),  # acc_trade_price
+            data.get("ask_bid", "BID"),  # ask_bid (ENUM)
+            float(data.get("acc_ask_volume", 0)),  # acc_ask_volume
+            float(data.get("acc_bid_volume", 0)),  # acc_bid_volume
+            float(data.get("acc_trade_price_24h", 0)),  # acc_trade_price_24h
+            float(data.get("acc_trade_volume_24h", 0)),  # acc_trade_volume_24h
+            float(data.get("highest_52_week_price", 0)),  # highest_52_week_price
+            parse_date_string(data.get("highest_52_week_date")),  # highest_52_week_date
+            float(data.get("lowest_52_week_price", 0)),  # lowest_52_week_price
+            parse_date_string(data.get("lowest_52_week_date")),  # lowest_52_week_date
+            data.get("market_state", "ACTIVE"),  # market_state (ENUM)
+            data.get("market_warning", "NONE"),  # market_warning (ENUM)
+            bool(data.get("is_trading_suspended", False)),  # is_trading_suspended
+            parse_date_string(data.get("delisting_date")),  # delisting_date (nullable)
+            data.get("trade_date", ""),  # trade_date (string)
+            data.get("trade_time", ""),  # trade_time (string)
+            int(data.get("trade_timestamp", 0)),  # trade_timestamp (bigint)
+            int(data.get("timestamp", 0)),  # timestamp (bigint)
+            data.get("stream_type", "REALTIME")  # stream_type (ENUM)
+        )
+        
+        with conn.cursor() as cur:
+            cur.execute(INSERT_QUERY, values)
+            conn.commit()
+        
+        code = data.get("code", "UNKNOWN")
+        trade_price = data.get("trade_price", 0)
+        change_rate = data.get("change_rate", 0)
+        
+        logging.info(f"Inserted ticker data: {code} @ {trade_price} ({change_rate:+.4f}%)")
+        
     except Exception as e:
-        logging.exception("Failed to insert trade data.")
+        logging.exception(f"Failed to insert ticker data: {e}")
+        logging.error(f"Problematic data: {data}")
         conn.rollback()
+        raise
 
-def process_message(message, db_conn):
-    """
-    Kafka 메시지를 JSON 디코딩한 후, TimescaleDB에 저장합니다.
-    
-    :param message: Kafka 메시지 객체
-    :param db_conn: TimescaleDB 연결 객체
-    """
+def process_message(message: Message, db_conn: Connection) -> None:
     try:
         data = json.loads(message.value().decode('utf-8'))
-        logging.info(f"Received message: {data}")
-        insert_trade_data(db_conn, data)
+        
+        # Log only essential info to reduce noise
+        code = data.get("code", "UNKNOWN")
+        trade_price = data.get("trade_price", 0)
+        change_rate = data.get("change_rate", 0)
+        logging.debug(f"Processing: {code} @ {trade_price} ({change_rate:+.4f}%)")
+        
+        insert_ticker_data(db_conn, data)
+        
     except json.JSONDecodeError as e:
         logging.error(f"JSON decoding error: {e}")
+        logging.error(f"Raw message: {message.value().decode('utf-8')}")
     except Exception as e:
         logging.error(f"Error processing message: {e}")
+        logging.error(f"Message data: {data if 'data' in locals() else 'N/A'}")
 
-def consume_messages():
-    """
-    Kafka 메시지를 소비하면서 TimescaleDB에 데이터를 저장합니다.
-    """
+def consume_messages() -> None:
     consumer = create_kafka_consumer()
     db_conn = create_db_connection()
+    
     try:
         while True:
-            msg = consumer.poll(1.0)  # 1초 대기 후 메시지 확인
+            msg = consumer.poll(POLL_TIMEOUT)
             if msg is None:
                 continue
+                
             if msg.error():
-                # 파티션의 끝에 도달한 경우
                 if msg.error().code() == KafkaError._PARTITION_EOF:
                     logging.info(
                         "End of partition reached: {} [{}] at offset {}".format(
@@ -141,7 +197,7 @@ def consume_messages():
         db_conn.close()
         logging.info("Consumer and DB connection closed.")
 
-def main():
+def main() -> None:
     consume_messages()
 
 if __name__ == "__main__":
