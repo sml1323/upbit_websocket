@@ -12,8 +12,8 @@
 
 ---
 
-## 🎯 현재 상황 (Week 1 → Week 2)
-**Focus**: ✅ Week 1 완료! → Week 2 MCP 서버 구축 시작
+## 🎯 현재 상황 (Week 2 진행 중)
+**Focus**: ✅ Week 1 완료! ✅ Week 2 MCP 서버 구축 완료! → 핵심 MCP 함수 구현 중
 
 ## ✅ 완료 작업
 - [x] 프로젝트 설계 및 PRD 작성
@@ -36,7 +36,7 @@
 - [x] **에러 핸들링 강화** (데이터 검증, 예외 처리) ✅
 
 ### ✅ Day 5-7: 테스트 및 검증  
-- [ ] **실제 데이터 테스트** (성능, 정확성)
+- [x] **실제 데이터 테스트** (성능, 정확성) ✅ 3,579개 레코드 저장 확인
 - [ ] **기본 모니터링 설정**
 
 ---
@@ -45,8 +45,8 @@
 
 ### Week 2: MCP 서버 구축
 - [x] **Continuous Aggregates** (ohlcv_1m, market_summary_5m, volume_anomalies_1h) ✅
-- [ ] **FreePeak/db-mcp-server 설치** 및 연동
-- [ ] **핵심 MCP 함수 3개** 구현 (`get_coin_summary`, `get_market_movers`, `detect_anomalies`)
+- [x] **FreePeak/db-mcp-server 설치** 및 연동 ✅ Docker 컨테이너 구동 완료
+- [ ] **핵심 MCP 함수 3개** 구현 (`get_coin_summary`, `get_market_movers`, `detect_anomalies`) 🔄 진행 중
 - [ ] **LLM 연동 테스트**
 
 ### Week 3-4: MVP 기능 (실시간 분석)
@@ -64,8 +64,14 @@
 
 ## Week 1 성공 지표
 - [x] 22개 필드 모두 TimescaleDB 저장 확인 ✅ (스키마 완료)
-- [ ] 데이터 수신율 99% 이상 유지 (배포 후 테스트 필요)
-- [ ] INSERT 성능 확인 (배포 후 테스트 필요)
+- [x] 데이터 수신율 99% 이상 유지 ✅ (3,579개 레코드 저장 확인)
+- [x] INSERT 성능 확인 ✅ (실시간 데이터 처리 정상)
+
+## Week 2 성공 지표
+- [x] MCP 서버 설치 및 연동 ✅ (FreePeak/db-mcp-server Docker 구동)
+- [x] TimescaleDB 연결 확인 ✅ (7개 데이터베이스 도구 등록)
+- [ ] 핵심 MCP 함수 3개 구현 (진행 중)
+- [ ] LLM 연동 테스트
 
 ---
 
@@ -88,11 +94,17 @@
 - `upbit-kafka/consumer.py` - 22필드 처리 로직
 - `deploy_new_schema.py` - 배포 자동화 스크립트
 
-**다음**: 스키마 배포 → 실제 데이터 테스트 → MCP 서버 구축
+**Week 2 추가 완료**:
+- [x] **Docker TimescaleDB 구축** (timescaledb-compose.yml)
+- [x] **22필드 실시간 데이터 테스트** (3,579개 레코드 성공)
+- [x] **MCP 서버 Docker 구동** (포트 9094, TimescaleDB 연결 성공)
+- [x] **7개 MCP 도구 등록 확인** (query, schema, timeseries 등)
+
+**다음**: 핵심 MCP 함수 구현 → LLM 연동 테스트 → MVP 기능 개발
 
 ---
 
-## 🎯 지금 시작할 작업 (Week 2)
-1. **새 스키마 배포** (30분) - `python deploy_new_schema.py`
-2. **실제 데이터 테스트** (1시간) - Consumer 재시작 후 22필드 확인
-3. **FreePeak/db-mcp-server 설치** (1시간) - MCP 서버 구축 시작
+## 🎯 지금 시작할 작업 (Week 2 마무리)
+1. **핵심 MCP 함수 3개 구현** (1시간) - `get_coin_summary`, `get_market_movers`, `detect_anomalies`
+2. **LLM 연동 테스트** (30분) - Claude Code MCP 연동 확인
+3. **Week 3 MVP 기능 준비** (30분) - 실시간 시장 요약 설계
