@@ -373,6 +373,76 @@ class CoinQASystem:
             'query_types': self.query_stats['query_types']
         }
 
+# FastAPI 웹 서버
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import uvicorn
+
+# 전역 Q&A 시스템 인스턴스
+qa_system = None
+
+class QuestionRequest(BaseModel):
+    question: str
+
+class QuestionResponse(BaseModel):
+    answer: str
+    coin_code: str = ""
+    timestamp: str = ""
+
+# FastAPI 앱 생성
+app = FastAPI(
+    title="Coin Q&A System",
+    description="코인 질의응답 시스템",
+    version="1.0.0"
+)
+
+@app.on_event("startup")
+async def startup_event():
+    """서비스 시작 시 Q&A 시스템 초기화"""
+    global qa_system
+    qa_system = CoinQASystem()
+    logger.info("코인 Q&A 시스템 초기화 완료")
+
+@app.post("/ask", response_model=QuestionResponse)
+async def ask_question(request: QuestionRequest):
+    """코인 질의응답 처리"""
+    try:
+        if not qa_system:
+            raise HTTPException(status_code=500, detail="QA 시스템이 초기화되지 않았습니다.")
+        
+        # 질의 처리
+        answer = await qa_system.process_query(request.question)
+        
+        # 코인 코드 추출 (응답에 포함하기 위해)
+        coin_code = qa_system.code_mapper.extract_coin_code(request.question) or ""
+        
+        return QuestionResponse(
+            answer=answer,
+            coin_code=coin_code,
+            timestamp=datetime.now(timezone.utc).isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"질의 처리 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"질의 처리 중 오류가 발생했습니다: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    """헬스 체크 엔드포인트"""
+    return {
+        "status": "healthy",
+        "service": "coin-qa-system",
+        "stats": qa_system.get_stats() if qa_system else {}
+    }
+
+@app.get("/stats")
+async def get_stats():
+    """통계 정보 조회"""
+    if not qa_system:
+        raise HTTPException(status_code=500, detail="QA 시스템이 초기화되지 않았습니다.")
+    
+    return qa_system.get_stats()
+
 # 웹 서버 테스트 함수
 async def test_qa_system():
     """QA 시스템 테스트 (Docker용)"""
@@ -421,4 +491,16 @@ async def test_qa_system():
         print("🔄 시스템 정상 동작 중...")
 
 if __name__ == "__main__":
-    asyncio.run(test_qa_system())
+    import sys
+    import os
+    
+    # Docker 환경에서는 웹 서버 모드로 실행
+    if os.getenv("DOCKER_ENV") == "true":
+        # 웹 서버 모드
+        uvicorn.run(app, host="0.0.0.0", port=8080)
+    elif len(sys.argv) > 1 and sys.argv[1] == "test":
+        # 테스트 모드
+        asyncio.run(test_qa_system())
+    else:
+        # 웹 서버 모드
+        uvicorn.run(app, host="0.0.0.0", port=8080)

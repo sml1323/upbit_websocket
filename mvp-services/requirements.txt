@@ -24,8 +24,10 @@ openai==1.56.2
 # 수치 계산 (이상 탐지용)
 numpy==1.24.3
 
-# Week 3-4에서 추가될 의존성들 (웹 인터페이스)
-# 추후 추가 예정:
-# - fastapi
-# - uvicorn 
+# Week 3-4 웹 인터페이스 의존성들
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.3
+
+# 추가 유틸리티
 # - sqlalchemy (필요시)

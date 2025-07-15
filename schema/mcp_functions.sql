@@ -314,9 +314,9 @@ BEGIN
     market_stats AS (
         SELECT 
             COUNT(*) as total,
-            COUNT(*) FILTER (WHERE change_rate > 1) as rising,
-            COUNT(*) FILTER (WHERE change_rate < -1) as falling,
-            COUNT(*) FILTER (WHERE change_rate BETWEEN -1 AND 1) as neutral
+            COUNT(*) FILTER (WHERE change_rate > 0.01) as rising,
+            COUNT(*) FILTER (WHERE change_rate < -0.01) as falling,
+            COUNT(*) FILTER (WHERE change_rate BETWEEN -0.01 AND 0.01) as neutral
         FROM latest_data
     ),
     extremes AS (

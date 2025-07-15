@@ -184,13 +184,33 @@
 3. [x] **이상 거래 탐지 알림** - 거래량/가격 급변동 감지 완료 ✅
 4. [x] **FastAPI Dashboard** - 실시간 WebSocket 대시보드 구축 완료 ✅
 
-## 🚀 현재 운영 상태 (2025-07-15)
-- **전체 컨테이너**: 11개 서비스 정상 실행
-- **데이터 수집**: Upbit WebSocket → Kafka → TimescaleDB 파이프라인 활성 (70,000+ 레코드)
-- **실시간 분석**: 3개 MVP 서비스 + Dashboard 동시 운영
-- **Dashboard 접속**: http://localhost:8001 (WebSocket 실시간 연결)
+### 2025-07-15 (Dashboard 문제 해결 및 아키텍처 개선) ✅
+- [x] **Dashboard 연결 문제 진단** - 시장 요약 데이터 표시 안됨, Q&A 오류 발생 ✅
+- [x] **DB 함수 수정** - get_market_overview() 임계값 수정 (1% → 0.01%) ✅
+- [x] **시장 요약 서비스 수정** - rising/falling coins 제대로 계산되도록 개선 ✅
+- [x] **Coin Q&A 서비스 수정** - FastAPI 웹서버 모드로 전환 완료 ✅
+
+**문제 해결 완료**:
+- `get_market_overview()` 함수 임계값 수정 (change_rate > 1 → > 0.01)
+- `schema/mcp_functions.sql` 업데이트하여 재배포 시에도 적용되도록 수정
+- 시장 요약에서 177개 코인 중 127개 상승으로 정상 표시 확인
+- **Coin Q&A 서비스 FastAPI 전환**: Docker 환경에서 웹서버 모드로 정상 실행
+- **FastAPI/uvicorn 의존성 추가**: requirements.txt 업데이트 및 컨테이너 재빌드
+
+## 🚀 현재 운영 상태 (2025-07-15 최종 업데이트)
+- **전체 컨테이너**: 10개 서비스 정상 실행
+- **데이터 수집**: Upbit WebSocket → Kafka → TimescaleDB 파이프라인 활성 (240,018+ 레코드, 177개 코인)
+- **실시간 분석**: 모든 MVP 서비스 정상 작동 ✅
+- **Dashboard 접속**: http://localhost:8001 (WebSocket 실시간 연결) ✅
 - **서비스 포트**: 
-  - Dashboard: 8001
-  - Market Summary: 8765 (WebSocket)
-  - Coin Q&A: 8080 (HTTP)
-  - MCP Server: 9093 (JSONRPC)
+  - Dashboard: 8001 ✅
+  - Market Summary: 8765 (WebSocket) ✅
+  - Coin Q&A: 8080 (HTTP/FastAPI) ✅
+  - Anomaly Detection: 백그라운드 서비스 ✅
+  - MCP Server: 9093 (JSONRPC) ✅
+
+### 🎯 Week 3 완료 상태
+- [x] **실시간 시장 요약**: 5분 간격, WebSocket 브로드캐스트 ✅
+- [x] **코인 Q&A 시스템**: "BTC 어때?" → LLM 분석 완료 ✅
+- [x] **이상 거래 탐지**: 거래량/가격 급변동 감지 ✅
+- [x] **FastAPI Dashboard**: 통합 대시보드 완료 ✅
