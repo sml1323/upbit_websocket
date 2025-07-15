@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 240 120">
+  <!-- Generator: Adobe Illustrator 29.3.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 146)  -->
+  <defs>
+    <style>
+      .st0 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .st0, .st1 {
+        fill: none;
+        stroke: #1e54b7;
+      }
+
+      .st1 {
+        isolation: isolate;
+        opacity: .1;
+        stroke-width: .5px;
+      }
+
+      .st2 {
+        fill: #1e54b7;
+      }
+    </style>
+  </defs>
+  <ellipse class="st0" cx="95" cy="43" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <ellipse class="st0" cx="95" cy="58" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" begin="0.3s" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <ellipse class="st0" cx="95" cy="73" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" begin="0.6s" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <line class="st0" x1="80" y1="43" x2="80" y2="73"/>
+  <line class="st0" x1="110" y1="43" x2="110" y2="73"/>
+  <ellipse class="st0" cx="155" cy="43" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" begin="0.2s" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <ellipse class="st0" cx="155" cy="58" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" begin="0.5s" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <ellipse class="st0" cx="155" cy="73" rx="15" ry="6">
+    <animate accumulate="none" additive="replace" attributeName="ry" begin="0.8s" calcMode="linear" dur="3s" fill="remove" repeatCount="indefinite" restart="always" values="6;5;6"/>
+  </ellipse>
+  <line class="st0" x1="140" y1="43" x2="140" y2="73"/>
+  <line class="st0" x1="170" y1="43" x2="170" y2="73"/>
+  <line class="st0" x1="95" y1="87.5" x2="95" y2="92.5"/>
+  <line class="st0" x1="95" y1="92.5" x2="155" y2="92.5"/>
+  <circle class="st2" cx="95" cy="85.9" r="1.6">
+    <animate accumulate="none" additive="replace" attributeName="r" calcMode="linear" dur="2s" fill="remove" repeatCount="indefinite" restart="always" values="1.571;2.5;1.571"/>
+  </circle>
+  <rect class="st2" x="122.7" y="90.2" width="4.6" height="4.6" transform="translate(-28.8 115.5) rotate(-45)"/>
+  <circle class="st2" cx="155" cy="85.8" r="1.6">
+    <animate accumulate="none" additive="replace" attributeName="r" calcMode="linear" dur="2s" fill="remove" repeatCount="indefinite" restart="always" values="1.571;2.5;1.571"/>
+  </circle>
+  <circle class="st1" cx="125" cy="56.2" r="31.2">
+    <animate accumulate="none" additive="replace" attributeName="r" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="35;45;35"/>
+    <animate accumulate="none" additive="replace" attributeName="opacity" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="0.1;0;0.1"/>
+  </circle>
+  <circle class="st1" cx="125" cy="56.2" r="24.1">
+    <animate accumulate="none" additive="replace" attributeName="r" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="25;35;25"/>
+    <animate accumulate="none" additive="replace" attributeName="opacity" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="0.1;0;0.1"/>
+  </circle>
+  <circle class="st1" cx="125" cy="56.2" r="17">
+    <animate accumulate="none" additive="replace" attributeName="r" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="15;25;15"/>
+    <animate accumulate="none" additive="replace" attributeName="opacity" calcMode="linear" dur="4s" fill="remove" repeatCount="indefinite" restart="always" values="0.1;0;0.1"/>
+  </circle>
+  <line class="st0" x1="155" y1="87.5" x2="155" y2="92.5"/>
+</svg>

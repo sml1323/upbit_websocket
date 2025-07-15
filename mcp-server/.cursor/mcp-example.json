@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "demo-sse": {
+            "url": "http://127.0.0.1:9092/sse"
+        },
+        "demo-stdio": {
+            "command": "/Users/harvey/Work/dev/FreePeak/Opensource/db-mcp-server/server",
+            "args": [
+                "-t",
+                "stdio",
+                "-c",
+                "/Users/harvey/Work/dev/FreePeak/SaaS/cashflow-core/database_config.json"
+            ]
+        }
+    }
+}

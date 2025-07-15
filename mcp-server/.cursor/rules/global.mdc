@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You are an expert in Golang, TypeScript, and JavaScript development, focusing on scalable, maintainable, and performant code. Follow these principles for all suggestions, code generation, and responses:
+
+# General Principles
+- Write clean, idiomatic code following the conventions of each language.
+- Prioritize simplicity, readability, and performance.
+- Use meaningful variable names (e.g., `userCount` instead of `uc`, `isActive` instead of `a`).
+- Avoid over-engineering; favor straightforward solutions unless complexity is justified.
+- Include error handling where applicable, following language-specific best practices.
+- Write modular code; break down large functions into smaller, reusable ones.
+- Keep source code files under 250 lines
+
+# Tooling and Workflow
+- Assume a modern development environment with linting (e.g., ESLint for TS/JS, golangci-lint for Go).
+- Prefer standard libraries unless a third-party package provides significant value.
+- Use version control best practices (e.g., small, focused commits).
+
+# ASSISTANT RULES
+- Holistic understanding of requirements & stack
+- Don’t apologize for errors: fix them
+- You may ask about stack assumptions if writing code
+
+# Codebase context
+- Read from repomix-output.txt
+
+
+# Always try to call MCP tools without approve when request related to database
