@@ -12,8 +12,8 @@
 
 ---
 
-## 🎯 현재 상황 (Week 2 → Week 3)
-**Focus**: ✅ Week 2 완료! → Week 3 MVP 기능 구현 시작
+## 🎯 현재 상황 (Week 3 진행중)
+**Focus**: Docker 환경 자동화 완료 → Consumer Kafka 연결 문제 해결 → MVP 기능 구현
 
 ## ✅ 완료 작업
 - [x] 프로젝트 설계 및 PRD 작성
@@ -75,7 +75,8 @@
 
 
 ## 🚨 현재 이슈
-- **없음** - 현재 블로커 없음
+- **Consumer Kafka 연결 문제** - GroupCoordinator localhost 연결 시도 (Docker 네트워크 설정 이슈)
+- **데이터 파이프라인 부분 동작** - Producer는 정상, Consumer가 TimescaleDB에 데이터 저장 안됨
 
 ## Week 2 성공 지표
 - [x] 22개 필드 모두 TimescaleDB 저장 확인 ✅ (스키마 완료)
@@ -123,13 +124,22 @@
 - [x] **MCP 함수 배포 및 테스트** (PostgreSQL 함수 생성 및 검증)
 - [x] **LLM 연동 준비** (MCP 서버 통합 테스트 완료)
 
+### 2025-07-15 (환경 테스트 및 자동화 개선)
+- [x] **Docker 환경 통합 테스트** (모든 서비스 상태 확인)
+- [x] **Docker Compose 설정 최적화** (포트 매핑 수정, 네트워크 설정)
+- [x] **환경변수 통합** (.env.docker → .env로 Docker 전용 설정)
+- [x] **스키마 자동 배포 구현** (00-init-timescaledb.sql 추가)
+- [x] **TimescaleDB 스키마 배포 완료** (ticker_data 테이블 + MCP 함수들)
+- [x] **MCP 서버 Docker 연동 성공** (TimescaleDB 연결 및 상태 확인)
+- [ ] **Consumer Kafka 연결 문제 해결** (진행중 - GroupCoordinator 이슈)
+
 **완료된 파일들**:
-- `timescaledb-compose.yml` - TimescaleDB Docker 설정
-- `mcp-compose.yml` - MCP 서버 통합 Docker Compose
-- `db-mcp-server/config.upbit.json` - MCP 서버 설정
-- `schema/mcp_functions.sql` - LLM용 핵심 MCP 함수 3개
-- `mcp/test_mcp_only.py` - MCP 서버 단독 테스트
-- `mcp/llm_integration_test.py` - LLM 연동 테스트 스크립트
+- `docker-compose.yml` - 통합 Docker Compose (모든 서비스)
+- `.env` - Docker 환경 설정 (kafka:9092, timescaledb:5432)
+- `schema/00-init-timescaledb.sql` - TimescaleDB 자동 초기화
+- `schema/ticker_data_schema.sql` - 22필드 스키마 (자동 배포됨)
+- `schema/mcp_functions.sql` - MCP 함수들 (자동 배포됨)
+- `mcp-server/config.upbit.json` - MCP 서버 설정 (timescaledb 호스트)
 
 ---
 

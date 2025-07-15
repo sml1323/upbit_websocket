@@ -108,7 +108,7 @@ services:
   # MCP Server - LLM 연동 서버
   mcp-server:
     build:
-      context: ./db-mcp-server
+      context: ./mcp-server
       dockerfile: Dockerfile
     container_name: mcp-server
     ports:
@@ -117,10 +117,10 @@ services:
       timescaledb:
         condition: service_healthy
     environment:
-      - MCP_SERVER_PORT=9092
-      - DATABASE_URL=postgresql://upbit_user:upbit_password@timescaledb:5432/upbit_analytics
+      - CONFIG_PATH=/app/config.upbit.json
     volumes:
-      - ./db-mcp-server/config.upbit.json:/app/config.json:ro
+      - ./mcp-server/config.upbit.json:/app/config.upbit.json:ro
+    command: ["/app/server", "-config", "/app/config.upbit.json"]
     restart: always
     networks:
       - upbit-network
