@@ -37,6 +37,11 @@ Upbit WebSocket → Kafka → TimescaleDB → MCP Server → LLM
 - **핵심 MCP 함수**: get_coin_summary, get_market_movers, detect_anomalies
 - 토큰 효율성: 50,000 토큰 → 500 토큰 (99% 절약)
 
+### 5. MVP Services (`mvp-services/`)
+- **realtime_market_summary.py**: 실시간 시장 요약 (포트 8765, WebSocket)
+- **coin_qa_system.py**: 코인 Q&A 시스템 (포트 8080, OpenAI 연동)
+- **anomaly_detection_system.py**: 이상 탐지 시스템 (5분 주기 모니터링)
+
 ## Development Commands
 
 ### Environment Setup
@@ -73,11 +78,25 @@ python consumer.py
 python test_mcp_connection.py
 ```
 
+### MVP Services
+```bash
+# Start all MVP services
+docker-compose up -d mvp-market-summary mvp-coin-qa mvp-anomaly-detection
+
+# Individual MVP service start
+docker-compose up -d mvp-market-summary    # 실시간 시장 요약
+docker-compose up -d mvp-coin-qa          # 코인 Q&A 시스템  
+docker-compose up -d mvp-anomaly-detection # 이상 탐지 시스템
+```
+
 ### Services Access
 - TimescaleDB: localhost:5432 (upbit_user/upbit_password)
 - Kafka: localhost:9092
 - MCP Server: localhost:9093
 - Redis Cache: localhost:6379
+- MVP Market Summary: localhost:8765 (WebSocket)
+- MVP Coin Q&A: localhost:8080 (HTTP)
+- MVP Anomaly Detection: Background service
 
 ## Environment Variables
 
@@ -86,6 +105,7 @@ Configure via .env file:
 - `KAFKA_TOPIC`: Topic name (default: upbit_ticker)
 - `KAFKA_GROUP_ID`: Consumer group (default: default_group)
 - `TIMESCALEDB_*`: Database connection parameters
+- `OPENAI_API_KEY`: OpenAI API key for MVP services
 
 ## Data Schema
 
@@ -104,6 +124,7 @@ The project uses:
 - `wurstmeister/kafka:latest` and `wurstmeister/zookeeper:latest` for message broker
 - `freepeak/db-mcp-server` for LLM integration via MCP
 - `redis:7-alpine` for caching
+- `python:3.9-slim` for MVP services (custom built images)
 
 ## Important Notes
 
@@ -112,3 +133,47 @@ The project uses:
 - MCP functions provide 99% token efficiency (50K→500 tokens)
 - TimescaleDB Continuous Aggregates for real-time analytics
 - No BigQuery or Airflow - focus on real-time LLM integration
+
+## MVP Implementation Status (2025-07-15)
+
+### ✅ Completed Features
+1. **실시간 시장 요약 서비스** (`mvp-market-summary`)
+   - 5분 주기 시장 분석 및 WebSocket 브로드캐스트
+   - HTML 클라이언트 포함 (market_summary_client.html)
+   - 포트 8765에서 WebSocket 서버 실행
+
+2. **코인 Q&A 시스템** (`mvp-coin-qa`)
+   - 자연어 질의 처리 ("BTC 어때?", "비트코인 분석해줘")
+   - OpenAI GPT-4o-mini 연동 완료
+   - 토큰 효율적 프롬프트 최적화
+   - Docker 환경에서 자동 테스트 모드 실행
+
+3. **이상 탐지 시스템** (`mvp-anomaly-detection`)
+   - 거래량/가격 급변 탐지 (통계적 분석)
+   - 5분 주기 모니터링
+   - DB 함수 `detect_anomalies()` 연동
+   - 실시간 알림 시스템
+
+### 🔧 해결된 기술 이슈
+- Docker EOF 에러: `input()` 함수 → 자동 테스트 모드 변경
+- OpenAI API 호환성: v0.28 → v1.56.2 업그레이드
+- DB 함수 매개변수 오류: `detect_anomalies(timeframe_hours, sensitivity)` 수정
+- Kafka 네트워크 연결: Docker Compose 네트워크 설정 최적화
+
+### 📊 현재 운영 상태
+- **전체 컨테이너**: 10개 서비스 정상 실행
+- **데이터 수집**: Upbit WebSocket → Kafka → TimescaleDB 파이프라인 활성
+- **LLM 연동**: MCP Server + OpenAI API 완전 연동
+- **실시간 분석**: 3개 MVP 서비스 동시 운영
+- **데이터 현황**: 244,239건 레코드, 177개 코인 실시간 수집 중
+
+### 🔌 VSCode DB 연결 (WSL 환경)
+WSL에서 실행 중이므로 VSCode DB 확장 연결 시 다음 설정 사용:
+```
+Host: 172.31.65.200 (WSL IP - localhost 대신 사용)
+Port: 5432
+Database: upbit_analytics
+Username: upbit_user
+Password: upbit_password
+SSL Mode: prefer
+```

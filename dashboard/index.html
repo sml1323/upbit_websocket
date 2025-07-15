@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upbit LLM Analytics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #16213e !important;
+            border-bottom: 2px solid #0f3460;
+        }
+        .card {
+            background-color: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            background-color: #0f3460;
+            border-bottom: 1px solid #533483;
+        }
+        .market-summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .qa-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .anomaly-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .chart-container {
+            height: 300px;
+            background-color: #0f3460;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: #28a745;
+        }
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+        .alert-level-high {
+            border-left: 4px solid #dc3545;
+        }
+        .alert-level-medium {
+            border-left: 4px solid #ffc107;
+        }
+        .alert-level-low {
+            border-left: 4px solid #28a745;
+        }
+        .coin-input-group {
+            margin-bottom: 20px;
+        }
+        .qa-response {
+            background-color: #0f3460;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            min-height: 100px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner-border {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Upbit LLM Analytics
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <span class="status-indicator" id="connection-status"></span>
+                    <span id="connection-text">연결 중...</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- 실시간 시장 요약 -->
+            <div class="col-md-4 mb-4">
+                <div class="card market-summary-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-globe me-2"></i>
+                            실시간 시장 요약
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="market-summary-content" class="loading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">마지막 업데이트: <span id="last-update">-</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 코인 Q&A -->
+            <div class="col-md-4 mb-4">
+                <div class="card qa-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-comments me-2"></i>
+                            코인 Q&A
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="coin-input-group">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="coin-question" 
+                                       placeholder="예: BTC 어때?, 이더리움 분석해줘">
+                                <button class="btn btn-outline-light" type="button" id="ask-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="qa-response" class="qa-response">
+                            <div class="text-muted">코인에 대해 자유롭게 질문해보세요!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 이상 탐지 알림 -->
+            <div class="col-md-4 mb-4">
+                <div class="card anomaly-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            이상 탐지 알림
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="anomaly-alerts" class="loading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 기술적 지표 차트 -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-area me-2"></i>
+                            기술적 지표
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <select class="form-select" id="coin-selector">
+                                <option value="KRW-BTC">비트코인 (BTC)</option>
+                                <option value="KRW-ETH">이더리움 (ETH)</option>
+                                <option value="KRW-XRP">리플 (XRP)</option>
+                                <option value="KRW-ADA">카르다노 (ADA)</option>
+                            </select>
+                            <button class="btn btn-outline-light" type="button" id="load-indicators">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div id="indicators-content" class="chart-container">
+                            <div class="text-center text-muted">
+                                코인을 선택하고 로드 버튼을 클릭하세요
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시장 통계 -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            시장 통계
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="market-stats" class="chart-container">
+                            <div class="text-center text-muted">시장 통계 로딩 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

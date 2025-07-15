@@ -64,7 +64,7 @@
 - [ ] **이상 거래 탐지** 알림
 
 ### Week 4-5: 고급 기능 및 최적화
-- [ ] **기술적 지표 추가** (RSI, 볼린저밴드, 이동평균선)
+- [x] **기술적 지표 추가** (RSI, 볼린저밴드, 이동평균선) ✅
 - [ ] **예측 모델 통합** (가격 예측, 트렌드 분석)
 - [ ] **성능 최적화** (쿼리 최적화, 캐싱)
 
@@ -131,6 +131,9 @@
 - [x] **스키마 자동 배포 구현** (00-init-timescaledb.sql 추가)
 - [x] **TimescaleDB 스키마 배포 완료** (ticker_data 테이블 + MCP 함수들)
 - [x] **MCP 서버 Docker 연동 성공** (TimescaleDB 연결 및 상태 확인)
+- [x] **MCP 활용 필요성 재검토** (미래 최적화 용도로 유지 결정)
+- [x] **RSI 기술적 지표 구현** (MCP 통해 calculate_rsi 함수 완성)
+- [x] **볼린저밴드 지표 구현** (MCP 통해 calculate_bollinger_bands 함수 완성)
 - [ ] **Consumer Kafka 연결 문제 해결** (진행중 - GroupCoordinator 이슈)
 
 **완료된 파일들**:
@@ -140,6 +143,9 @@
 - `schema/ticker_data_schema.sql` - 22필드 스키마 (자동 배포됨)
 - `schema/mcp_functions.sql` - MCP 함수들 (자동 배포됨)
 - `mcp-server/config.upbit.json` - MCP 서버 설정 (timescaledb 호스트)
+- **새로 추가된 기술적 지표 함수들** (MCP 통해 TimescaleDB에 배포됨):
+  - `calculate_rsi(coin_code, period)` - RSI 계산 함수
+  - `calculate_bollinger_bands(coin_code, period, std_dev)` - 볼린저밴드 계산 함수
 
 ---
 

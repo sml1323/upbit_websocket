@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 시장 요약</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: #4CAF50;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .summary-card {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .summary-card.high {
+            border-left-color: #ff4444;
+            background: #332d2d;
+        }
+        
+        .summary-card.medium {
+            border-left-color: #ffaa00;
+            background: #332d2d;
+        }
+        
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .alert-level {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .alert-level.low {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .alert-level.medium {
+            background: #ffaa00;
+            color: white;
+        }
+        
+        .alert-level.high {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .summary-text {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        
+        .market-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .connection-info {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            color: #888;
+        }
+        
+        .history {
+            margin-top: 30px;
+        }
+        
+        .history h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .history-item {
+            background: #2d2d2d;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .history-time {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .history-text {
+            margin-top: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 실시간 시장 요약</h1>
+        
+        <div class="status">
+            <div>
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">연결 중...</span>
+            </div>
+            <div>
+                <span id="lastUpdate">마지막 업데이트: -</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn" onclick="connect()">연결</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>연결 해제</button>
+            <button onclick="clearHistory()">히스토리 초기화</button>
+        </div>
+        
+        <div id="currentSummary"></div>
+        
+        <div class="history">
+            <h2>📊 요약 히스토리</h2>
+            <div id="historyContainer"></div>
+        </div>
+        
+        <div class="connection-info">
+            <p>WebSocket 연결: ws://localhost:8765</p>
+            <p>업데이트 간격: 5분</p>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let isConnected = false;
+        let summaryHistory = [];
+        
+        // 초기 연결 시도
+        connect();
+        
+        function connect() {
+            if (socket) {
+                socket.close();
+            }
+            
+            updateStatus('연결 중...', false);
+            
+            socket = new WebSocket('ws://localhost:8765');
+            
+            socket.onopen = function(event) {
+                isConnected = true;
+                updateStatus('연결됨', true);
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                console.log('WebSocket 연결 성공');
+            };
+            
+            socket.onmessage = function(event) {
+                try {
+                    const summary = JSON.parse(event.data);
+                    displaySummary(summary);
+                    addToHistory(summary);
+                    updateLastUpdate();
+                } catch (error) {
+                    console.error('메시지 파싱 오류:', error);
+                }
+            };
+            
+            socket.onclose = function(event) {
+                isConnected = false;
+                updateStatus('연결 끊김', false);
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                console.log('WebSocket 연결 종료');
+                
+                // 5초 후 재연결 시도
+                setTimeout(connect, 5000);
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket 오류:', error);
+                updateStatus('오류 발생', false);
+            };
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.close();
+            }
+        }
+        
+        function updateStatus(text, connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'status-indicator' + (connected ? ' connected' : '');
+            statusText.textContent = text;
+        }
+        
+        function displaySummary(summary) {
+            const container = document.getElementById('currentSummary');
+            
+            const alertClass = summary.alert_level || 'low';
+            const timestamp = new Date(summary.timestamp).toLocaleString('ko-KR');
+            
+            container.innerHTML = `
+                <div class="summary-card ${alertClass}">
+                    <div class="summary-header">
+                        <span class="timestamp">${timestamp}</span>
+                        <span class="alert-level ${alertClass}">${summary.alert_level}</span>
+                    </div>
+                    <div class="summary-text">${summary.summary_text}</div>
+                    <div class="market-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${summary.total_coins}</div>
+                            <div class="stat-label">전체 코인</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${summary.rising_coins}</div>
+                            <div class="stat-label">상승 코인</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${summary.falling_coins}</div>
+                            <div class="stat-label">하락 코인</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${summary.market_sentiment}</div>
+                            <div class="stat-label">시장 분위기</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function addToHistory(summary) {
+            summaryHistory.unshift(summary);
+            
+            // 최대 50개 히스토리 유지
+            if (summaryHistory.length > 50) {
+                summaryHistory = summaryHistory.slice(0, 50);
+            }
+            
+            updateHistoryDisplay();
+        }
+        
+        function updateHistoryDisplay() {
+            const container = document.getElementById('historyContainer');
+            
+            container.innerHTML = summaryHistory.map(summary => {
+                const timestamp = new Date(summary.timestamp).toLocaleString('ko-KR');
+                return `
+                    <div class="history-item">
+                        <div class="history-time">${timestamp} - ${summary.alert_level}</div>
+                        <div class="history-text">${summary.summary_text}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function clearHistory() {
+            summaryHistory = [];
+            updateHistoryDisplay();
+        }
+        
+        function updateLastUpdate() {
+            const now = new Date().toLocaleString('ko-KR');
+            document.getElementById('lastUpdate').textContent = `마지막 업데이트: ${now}`;
+        }
+        
+        // 페이지 언로드 시 연결 해제
+        window.addEventListener('beforeunload', function() {
+            if (socket) {
+                socket.close();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -51,4 +51,4 @@ VOLUME ["/app/logs"]
 CMD ["/bin/bash", "-c", "/app/server -t ${TRANSPORT_MODE} -p ${SERVER_PORT} -c ${CONFIG_PATH}"]
 
 # You can override the port by passing it as a command-line argument
-# docker run -p 8080:8080 db-mcp-server -port 8080 
+# docker run -p 8080:8080 db-mcp-server -port 8080

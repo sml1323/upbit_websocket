@@ -145,6 +145,70 @@ services:
     networks:
       - upbit-network
 
+  # MVP Services - 실시간 시장 요약, 코인 Q&A, 이상 탐지
+  mvp-market-summary:
+    build:
+      context: ./mvp-services
+      dockerfile: Dockerfile
+    container_name: mvp-market-summary
+    ports:
+      - "8765:8765"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - TIMESCALEDB_HOST=timescaledb
+      - TIMESCALEDB_PORT=5432
+      - TIMESCALEDB_DBNAME=upbit_analytics
+      - TIMESCALEDB_USER=upbit_user
+      - TIMESCALEDB_PASSWORD=upbit_password
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: ["python", "realtime_market_summary.py"]
+    networks:
+      - upbit-network
+    restart: unless-stopped
+
+  mvp-coin-qa:
+    build:
+      context: ./mvp-services
+      dockerfile: Dockerfile
+    container_name: mvp-coin-qa
+    ports:
+      - "8080:8080"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - TIMESCALEDB_HOST=timescaledb
+      - TIMESCALEDB_PORT=5432
+      - TIMESCALEDB_DBNAME=upbit_analytics
+      - TIMESCALEDB_USER=upbit_user
+      - TIMESCALEDB_PASSWORD=upbit_password
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: ["python", "coin_qa_system.py"]
+    networks:
+      - upbit-network
+    restart: unless-stopped
+
+  mvp-anomaly-detection:
+    build:
+      context: ./mvp-services
+      dockerfile: Dockerfile
+    container_name: mvp-anomaly-detection
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - TIMESCALEDB_HOST=timescaledb
+      - TIMESCALEDB_PORT=5432
+      - TIMESCALEDB_DBNAME=upbit_analytics
+      - TIMESCALEDB_USER=upbit_user
+      - TIMESCALEDB_PASSWORD=upbit_password
+    command: ["python", "anomaly_detection_system.py"]
+    networks:
+      - upbit-network
+    restart: unless-stopped
+
 volumes:
   timescaledb-data:
     driver: local
