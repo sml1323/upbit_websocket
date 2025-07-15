@@ -12,8 +12,8 @@
 
 ---
 
-## 🎯 현재 상황 (Week 3 진행중)
-**Focus**: Docker 환경 자동화 완료 → Consumer Kafka 연결 문제 해결 → MVP 기능 구현
+## 🎯 현재 상황 (Week 3 완료!)
+**Focus**: MVP 기능 구현 완료 → FastAPI Dashboard 구축 완료 → 실시간 분석 플랫폼 구축 완료
 
 ## ✅ 완료 작업
 - [x] 프로젝트 설계 및 PRD 작성
@@ -58,10 +58,11 @@
 - [x] **핵심 MCP 함수 3개** 구현 (`get_coin_summary`, `get_market_movers`, `detect_anomalies`) ✅
 - [x] **LLM 연동 테스트** ✅
 
-### Week 3-4: MVP 기능 (실시간 분석)
-- [ ] **시장 요약 생성기** (5분 간격)
-- [ ] **코인별 질의응답** 시스템  
-- [ ] **이상 거래 탐지** 알림
+### Week 3-4: MVP 기능 (실시간 분석) ✅
+- [x] **시장 요약 생성기** (5분 간격) ✅
+- [x] **코인별 질의응답** 시스템 ✅
+- [x] **이상 거래 탐지** 알림 ✅
+- [x] **FastAPI Dashboard 구축** (실시간 WebSocket 대시보드) ✅
 
 ### Week 4-5: 고급 기능 및 최적화
 - [x] **기술적 지표 추가** (RSI, 볼린저밴드, 이동평균선) ✅
@@ -74,9 +75,11 @@
 - [ ] **모니터링 시스템** (로그, 메트릭, 알림)
 
 
-## 🚨 현재 이슈
-- **Consumer Kafka 연결 문제** - GroupCoordinator localhost 연결 시도 (Docker 네트워크 설정 이슈)
-- **데이터 파이프라인 부분 동작** - Producer는 정상, Consumer가 TimescaleDB에 데이터 저장 안됨
+## 🚨 해결된 이슈 ✅
+- [x] **Consumer Kafka 연결 문제** - GroupCoordinator localhost 연결 시도 (Docker 네트워크 설정 이슈) ✅
+- [x] **데이터 파이프라인 부분 동작** - Producer는 정상, Consumer가 TimescaleDB에 데이터 저장 안됨 ✅
+- [x] **DB 중복 키 오류** - UPSERT 구현으로 해결 ✅
+- [x] **WebSocket 연결 문제** - Docker 네트워크 바인딩 수정으로 해결 ✅
 
 ## Week 2 성공 지표
 - [x] 22개 필드 모두 TimescaleDB 저장 확인 ✅ (스키마 완료)
@@ -134,7 +137,7 @@
 - [x] **MCP 활용 필요성 재검토** (미래 최적화 용도로 유지 결정)
 - [x] **RSI 기술적 지표 구현** (MCP 통해 calculate_rsi 함수 완성)
 - [x] **볼린저밴드 지표 구현** (MCP 통해 calculate_bollinger_bands 함수 완성)
-- [ ] **Consumer Kafka 연결 문제 해결** (진행중 - GroupCoordinator 이슈)
+- [x] **Consumer Kafka 연결 문제 해결** (GroupCoordinator 이슈 해결) ✅
 
 **완료된 파일들**:
 - `docker-compose.yml` - 통합 Docker Compose (모든 서비스)
@@ -157,7 +160,37 @@
 5. ✅ **핵심 MCP 함수 3개 구현** (1시간) - get_coin_summary, get_market_movers, detect_anomalies 완료
 6. ✅ **LLM 연동 테스트** (30분) - MCP 서버 통합 테스트 완료
 
-## 🎯 Week 2 완료! 다음 작업 (Week 3)
-1. **실시간 시장 요약 생성기** (5분 간격) - MVP 기능 구현
-2. **코인별 질의응답 시스템** - "W코인 어때?" → LLM 분석
-3. **이상 거래 탐지 알림** - 거래량/가격 급변동 감지
+### 2025-07-15 (Week 3 완료 - FastAPI Dashboard 구축)
+- [x] **MVP 서비스 구현 완료** (실시간 시장 요약, 코인 Q&A, 이상 탐지) ✅
+- [x] **FastAPI Dashboard 서버 구축** (WebSocket 프록시, REST API 프록시) ✅
+- [x] **Docker 네트워크 문제 해결** (localhost → 0.0.0.0 바인딩 수정) ✅
+- [x] **DB 중복 키 오류 해결** (INSERT → UPSERT 구현) ✅
+- [x] **WebSocket 핸들러 오류 수정** (register_client 매개변수 수정) ✅
+- [x] **Dashboard HTML 정적 파일 경로 수정** (dashboard.js → /static/dashboard.js) ✅
+- [x] **전체 서비스 통합 테스트** (11개 컨테이너 정상 실행) ✅
+
+**완료된 파일들**:
+- `dashboard/main.py` - FastAPI 기반 대시보드 서버
+- `dashboard/requirements.txt` - FastAPI 의존성 파일
+- `dashboard/Dockerfile.dashboard` - Dashboard 컨테이너 이미지
+- `dashboard/index.html` - 대시보드 웹 인터페이스 (정적 파일 경로 수정)
+- `mvp-services/realtime_market_summary.py` - WebSocket 바인딩 및 핸들러 수정
+- `upbit-kafka/consumer.py` - UPSERT 구현으로 중복 키 오류 해결
+- `docker-compose.yml` - dashboard-server 서비스 추가
+
+## 🎯 Week 3 완료! 다음 작업 (Week 4+)
+1. [x] **실시간 시장 요약 생성기** (5분 간격) - MVP 기능 구현 완료 ✅
+2. [x] **코인별 질의응답 시스템** - "W코인 어때?" → LLM 분석 완료 ✅
+3. [x] **이상 거래 탐지 알림** - 거래량/가격 급변동 감지 완료 ✅
+4. [x] **FastAPI Dashboard** - 실시간 WebSocket 대시보드 구축 완료 ✅
+
+## 🚀 현재 운영 상태 (2025-07-15)
+- **전체 컨테이너**: 11개 서비스 정상 실행
+- **데이터 수집**: Upbit WebSocket → Kafka → TimescaleDB 파이프라인 활성 (70,000+ 레코드)
+- **실시간 분석**: 3개 MVP 서비스 + Dashboard 동시 운영
+- **Dashboard 접속**: http://localhost:8001 (WebSocket 실시간 연결)
+- **서비스 포트**: 
+  - Dashboard: 8001
+  - Market Summary: 8765 (WebSocket)
+  - Coin Q&A: 8080 (HTTP)
+  - MCP Server: 9093 (JSONRPC)

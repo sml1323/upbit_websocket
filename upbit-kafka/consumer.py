@@ -36,6 +36,39 @@ INSERT_QUERY = """
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
     )
+    ON CONFLICT (time, code) DO UPDATE SET
+        type = EXCLUDED.type,
+        opening_price = EXCLUDED.opening_price,
+        high_price = EXCLUDED.high_price,
+        low_price = EXCLUDED.low_price,
+        trade_price = EXCLUDED.trade_price,
+        prev_closing_price = EXCLUDED.prev_closing_price,
+        change = EXCLUDED.change,
+        change_price = EXCLUDED.change_price,
+        signed_change_price = EXCLUDED.signed_change_price,
+        change_rate = EXCLUDED.change_rate,
+        signed_change_rate = EXCLUDED.signed_change_rate,
+        trade_volume = EXCLUDED.trade_volume,
+        acc_trade_volume = EXCLUDED.acc_trade_volume,
+        acc_trade_price = EXCLUDED.acc_trade_price,
+        ask_bid = EXCLUDED.ask_bid,
+        acc_ask_volume = EXCLUDED.acc_ask_volume,
+        acc_bid_volume = EXCLUDED.acc_bid_volume,
+        acc_trade_price_24h = EXCLUDED.acc_trade_price_24h,
+        acc_trade_volume_24h = EXCLUDED.acc_trade_volume_24h,
+        highest_52_week_price = EXCLUDED.highest_52_week_price,
+        highest_52_week_date = EXCLUDED.highest_52_week_date,
+        lowest_52_week_price = EXCLUDED.lowest_52_week_price,
+        lowest_52_week_date = EXCLUDED.lowest_52_week_date,
+        market_state = EXCLUDED.market_state,
+        market_warning = EXCLUDED.market_warning,
+        is_trading_suspended = EXCLUDED.is_trading_suspended,
+        delisting_date = EXCLUDED.delisting_date,
+        trade_date = EXCLUDED.trade_date,
+        trade_time = EXCLUDED.trade_time,
+        trade_timestamp = EXCLUDED.trade_timestamp,
+        timestamp = EXCLUDED.timestamp,
+        stream_type = EXCLUDED.stream_type
 """
 
 logging.basicConfig(

@@ -210,11 +210,22 @@ services:
     restart: unless-stopped
   dashboard-server:
     build:
-      context: ./dashboard # dashboard/server.py가 있는 디렉토리
-      dockerfile: Dockerfile.dashboard # 새 Dockerfile 생성 필요
+      context: ./dashboard # dashboard/main.py가 있는 디렉토리
+      dockerfile: Dockerfile.dashboard # FastAPI 기반 Dockerfile
     container_name: dashboard-server
     ports:
-      - "8001:8000" # 대시보드가 수신할 호스트 포트:컨테이너 포트 (8000은 server.py의 기본값)
+      - "8001:8000" # 대시보드가 수신할 호스트 포트:컨테이너 포트 (8000은 FastAPI 기본값)
+    depends_on:
+      - mvp-market-summary
+      - mvp-coin-qa
+      - mcp-server
+    environment:
+      - MARKET_SUMMARY_HOST=mvp-market-summary
+      - COIN_QA_HOST=mvp-coin-qa
+      - MCP_SERVER_HOST=mcp-server
+      - MARKET_SUMMARY_PORT=8765
+      - COIN_QA_PORT=8080
+      - MCP_SERVER_PORT=9093
     networks:
       - upbit-network
     restart: unless-stopped

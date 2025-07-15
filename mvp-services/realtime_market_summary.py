@@ -229,7 +229,7 @@ class WebSocketNotifier:
         self.clients = set()
         self.server = None
         
-    async def register_client(self, websocket, path):
+    async def register_client(self, websocket, path=None):
         """클라이언트 등록"""
         self.clients.add(websocket)
         logger.info(f"클라이언트 연결: {websocket.remote_address}")
@@ -264,10 +264,10 @@ class WebSocketNotifier:
         """WebSocket 서버 시작"""
         self.server = await websockets.serve(
             self.register_client,
-            "localhost",
+            "0.0.0.0",
             self.port
         )
-        logger.info(f"WebSocket 서버 시작: ws://localhost:{self.port}")
+        logger.info(f"WebSocket 서버 시작: ws://0.0.0.0:{self.port}")
 
 class RealtimeMarketSummaryService:
     """실시간 시장 요약 서비스"""

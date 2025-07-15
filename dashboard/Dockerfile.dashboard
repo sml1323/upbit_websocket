@@ -2,21 +2,23 @@
 FROM python:3.9-slim-buster
 
 # 컨테이너 내 작업 디렉토리를 설정합니다.
-WORKDIR /app/dashboard
+WORKDIR /app
 
-# 필요한 파일을 컨테이너로 복사합니다.
-# server.py, dashboard.js, index.html 등 대시보드 관련 파일들이 해당됩니다.
-COPY server.py .
-COPY dashboard.js .
+# 의존성 파일을 먼저 복사하고 설치합니다.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 정적 파일을 위한 디렉토리 생성
+RUN mkdir -p static
+
+# 대시보드 관련 파일들을 복사합니다.
+COPY main.py .
 COPY index.html .
-
-# 만약 server.py가 추가적인 Python 라이브러리를 필요로 한다면,
-# requirements.txt 파일을 만들고 아래 주석을 해제하여 설치하세요.
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
+COPY dashboard.js static/
+COPY README.md .
 
 # 대시보드 서버가 수신 대기하는 포트 (기본값: 8000)를 노출합니다.
 EXPOSE 8000
 
-# 서버를 실행하는 명령어를 정의합니다.
-CMD ["python", "server.py", "--port", "8000"]
+# FastAPI 서버를 실행하는 명령어를 정의합니다.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
