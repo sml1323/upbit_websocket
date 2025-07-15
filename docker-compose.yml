@@ -208,6 +208,16 @@ services:
     networks:
       - upbit-network
     restart: unless-stopped
+  dashboard-server:
+    build:
+      context: ./dashboard # dashboard/server.py가 있는 디렉토리
+      dockerfile: Dockerfile.dashboard # 새 Dockerfile 생성 필요
+    container_name: dashboard-server
+    ports:
+      - "8001:8000" # 대시보드가 수신할 호스트 포트:컨테이너 포트 (8000은 server.py의 기본값)
+    networks:
+      - upbit-network
+    restart: unless-stopped
 
 volumes:
   timescaledb-data:
