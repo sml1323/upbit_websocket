@@ -107,25 +107,25 @@ services:
     networks:
       - upbit-network
 
-  # MCP Server - LLM 연동 서버
-  mcp-server:
-    build:
-      context: ./mcp-server
-      dockerfile: Dockerfile
-    container_name: mcp-server
-    ports:
-      - "9093:9092"
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-    environment:
-      - CONFIG_PATH=/app/config.upbit.json
-    volumes:
-      - ./mcp-server/config.upbit.json:/app/config.upbit.json:ro
-    command: ["/app/server", "-config", "/app/config.upbit.json"]
-    restart: always
-    networks:
-      - upbit-network
+  # MCP Server - LLM 연동 서버 (빌드 오류로 임시 비활성화)
+  # mcp-server:
+  #   build:
+  #     context: ./mcp-server
+  #     dockerfile: Dockerfile
+  #   container_name: mcp-server
+  #   ports:
+  #     - "9093:9092"
+  #   depends_on:
+  #     timescaledb:
+  #       condition: service_healthy
+  #   environment:
+  #     - CONFIG_PATH=/app/config.upbit.json
+  #   volumes:
+  #     - ./mcp-server/config.upbit.json:/app/config.upbit.json:ro
+  #   command: ["/app/server", "-config", "/app/config.upbit.json"]
+  #   restart: always
+  #   networks:
+  #     - upbit-network
 
   # Redis - 캐시 및 세션 관리 (옵션)
   redis:
@@ -219,7 +219,7 @@ services:
     depends_on:
       - mvp-market-summary
       - mvp-coin-qa
-      - mcp-server
+      # - mcp-server
     environment:
       - MARKET_SUMMARY_HOST=mvp-market-summary
       - COIN_QA_HOST=mvp-coin-qa
