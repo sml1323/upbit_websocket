@@ -234,11 +234,32 @@ class WebSocketNotifier:
         self.clients.add(websocket)
         logger.info(f"클라이언트 연결: {websocket.remote_address}")
         
+        # 새 클라이언트에게 즉시 최신 요약 전송
+        await self._send_immediate_summary(websocket)
+        
         try:
             await websocket.wait_closed()
         finally:
             self.clients.remove(websocket)
             logger.info(f"클라이언트 해제: {websocket.remote_address}")
+    
+    async def _send_immediate_summary(self, websocket):
+        """새 클라이언트에게 즉시 요약 전송"""
+        try:
+            # 전역 인스턴스들 사용
+            if hasattr(self, '_summary_generator'):
+                summary = self._summary_generator.generate_summary()
+                
+                if summary:
+                    message = json.dumps(asdict(summary), ensure_ascii=False)
+                    await websocket.send(message)
+                    logger.info("새 클라이언트에게 즉시 요약 전송")
+        except Exception as e:
+            logger.error(f"즉시 요약 전송 실패: {e}")
+    
+    def set_summary_generator(self, summary_generator):
+        """요약 생성기 설정 (외부에서 설정)"""
+        self._summary_generator = summary_generator
     
     async def broadcast_summary(self, summary: MarketSummary):
         """모든 클라이언트에게 요약 브로드캐스트"""
@@ -272,7 +293,7 @@ class WebSocketNotifier:
 class RealtimeMarketSummaryService:
     """실시간 시장 요약 서비스"""
     
-    def __init__(self, interval_minutes: int = 5):
+    def __init__(self, interval_minutes: int = 1):  # 1분으로 단축
         self.interval_minutes = interval_minutes
         self.db_manager = DatabaseManager()
         self.summary_generator = MarketSummaryGenerator(self.db_manager)
@@ -283,6 +304,9 @@ class RealtimeMarketSummaryService:
         """서비스 시작"""
         logger.info("실시간 시장 요약 서비스 시작")
         self.running = True
+        
+        # WebSocket 알리미에 요약 생성기 설정
+        self.websocket_notifier.set_summary_generator(self.summary_generator)
         
         # WebSocket 서버 시작
         await self.websocket_notifier.start_server()

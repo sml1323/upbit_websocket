@@ -34,7 +34,7 @@ class UpbitDashboard {
 
     // WebSocket 연결 (실시간 시장 요약)
     connectWebSocket() {
-        const wsUrl = 'ws://localhost:8001/ws/market-summary';
+        const wsUrl = `ws://${window.location.host}/ws/market-summary`;
         
         try {
             this.websocket = new WebSocket(wsUrl);
