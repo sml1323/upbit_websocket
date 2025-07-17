@@ -306,7 +306,7 @@ BEGIN
     RETURN QUERY
     WITH latest_data AS (
         SELECT DISTINCT ON (code)
-            code, change_rate, acc_trade_volume_24h
+            code, signed_change_rate, acc_trade_volume_24h
         FROM ticker_data
         WHERE time >= NOW() - INTERVAL '1 hour'
         ORDER BY code, time DESC
@@ -314,15 +314,15 @@ BEGIN
     market_stats AS (
         SELECT 
             COUNT(*) as total,
-            COUNT(*) FILTER (WHERE change_rate > 0.001) as rising,
-            COUNT(*) FILTER (WHERE change_rate < -0.001) as falling,
-            COUNT(*) FILTER (WHERE change_rate BETWEEN -0.001 AND 0.001) as neutral
+            COUNT(*) FILTER (WHERE signed_change_rate > 0.001) as rising,
+            COUNT(*) FILTER (WHERE signed_change_rate < -0.001) as falling,
+            COUNT(*) FILTER (WHERE signed_change_rate BETWEEN -0.001 AND 0.001) as neutral
         FROM latest_data
     ),
     extremes AS (
         SELECT 
-            (SELECT code FROM latest_data ORDER BY change_rate DESC LIMIT 1) as top_gain,
-            (SELECT code FROM latest_data ORDER BY change_rate ASC LIMIT 1) as top_loss,
+            (SELECT code FROM latest_data ORDER BY signed_change_rate DESC LIMIT 1) as top_gain,
+            (SELECT code FROM latest_data ORDER BY signed_change_rate ASC LIMIT 1) as top_loss,
             (SELECT code FROM latest_data ORDER BY acc_trade_volume_24h DESC LIMIT 1) as top_vol
         FROM latest_data LIMIT 1
     )

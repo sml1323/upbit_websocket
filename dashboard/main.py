@@ -17,6 +17,8 @@ from pathlib import Path
 import websockets
 from typing import Dict, Any
 import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +39,15 @@ MCP_SERVER_HOST = os.getenv("MCP_SERVER_HOST", "mcp-server")
 MARKET_SUMMARY_PORT = os.getenv("MARKET_SUMMARY_PORT", "8765")
 COIN_QA_PORT = os.getenv("COIN_QA_PORT", "8080")
 MCP_SERVER_PORT = os.getenv("MCP_SERVER_PORT", "9093")
+
+# TimescaleDB 연결 설정
+DB_CONFIG = {
+    "host": os.getenv("TIMESCALEDB_HOST", "timescaledb"),
+    "port": os.getenv("TIMESCALEDB_PORT", "5432"),
+    "database": os.getenv("TIMESCALEDB_DATABASE", "upbit_analytics"),
+    "user": os.getenv("TIMESCALEDB_USER", "upbit_user"),
+    "password": os.getenv("TIMESCALEDB_PASSWORD", "upbit_password")
+}
 
 # 정적 파일 마운트
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -227,6 +238,172 @@ async def backend_status():
         status["mcp_server"] = f"error: {e}"
     
     return status
+
+def get_db_connection():
+    """TimescaleDB 연결 객체 반환"""
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        logger.error(f"DB 연결 오류: {e}")
+        return None
+
+@app.get("/api/prediction/{coin_code}")
+async def get_coin_prediction(coin_code: str):
+    """
+    코인 예측 API - 통합 예측 모델 결과 반환
+    Example: /api/prediction/KRW-BTC
+    """
+    try:
+        conn = get_db_connection()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            # 통합 예측 모델 실행
+            cursor.execute(
+                "SELECT * FROM get_comprehensive_prediction(%s, 5);",
+                (coin_code,)
+            )
+            prediction_result = cursor.fetchone()
+            
+            if not prediction_result:
+                raise HTTPException(status_code=404, detail=f"No prediction data for {coin_code}")
+            
+            # 추가 기술적 지표 데이터
+            cursor.execute(
+                "SELECT * FROM get_technical_analysis(%s, 1);",
+                (coin_code,)
+            )
+            technical_result = cursor.fetchone()
+            
+            # 이동평균 신호
+            cursor.execute(
+                "SELECT * FROM calculate_moving_average_signals(%s, 5, 15, 60) ORDER BY time DESC LIMIT 1;",
+                (coin_code,)
+            )
+            ma_result = cursor.fetchone()
+            
+            # RSI 다이버전스
+            cursor.execute(
+                "SELECT * FROM detect_rsi_divergence(%s, 20) ORDER BY time DESC LIMIT 1;",
+                (coin_code,)
+            )
+            rsi_div_result = cursor.fetchone()
+            
+            # 볼린저밴드 브레이크아웃
+            cursor.execute(
+                "SELECT * FROM predict_bollinger_breakout(%s, 0.02) ORDER BY time DESC LIMIT 1;",
+                (coin_code,)
+            )
+            bb_result = cursor.fetchone()
+            
+            conn.close()
+            
+            # 응답 데이터 구성
+            response_data = {
+                "coin_code": coin_code,
+                "prediction": dict(prediction_result) if prediction_result else {},
+                "technical_analysis": dict(technical_result) if technical_result else {},
+                "moving_average_signals": dict(ma_result) if ma_result else {},
+                "rsi_divergence": dict(rsi_div_result) if rsi_div_result else {},
+                "bollinger_breakout": dict(bb_result) if bb_result else {},
+                "timestamp": asyncio.get_event_loop().time()
+            }
+            
+            return response_data
+            
+    except Exception as e:
+        logger.error(f"예측 API 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction API error: {e}")
+
+@app.get("/api/predictions/top-coins")
+async def get_top_coins_predictions():
+    """
+    주요 코인들의 예측 결과 요약
+    BTC, ETH, XRP 등 주요 코인들의 예측 신호 반환
+    """
+    top_coins = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-ADA", "KRW-DOT"]
+    predictions = {}
+    
+    try:
+        conn = get_db_connection()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            for coin in top_coins:
+                try:
+                    cursor.execute(
+                        "SELECT * FROM get_comprehensive_prediction(%s, 5);",
+                        (coin,)
+                    )
+                    result = cursor.fetchone()
+                    
+                    if result:
+                        predictions[coin] = {
+                            "current_price": float(result["current_price"]),
+                            "predicted_price_5m": float(result["predicted_price_5m"]),
+                            "overall_signal": result["overall_signal"],
+                            "confidence_score": result["confidence_score"],
+                            "risk_level": result["risk_level"],
+                            "recommendation": result["recommendation"]
+                        }
+                except Exception as e:
+                    logger.warning(f"{coin} 예측 오류: {e}")
+                    predictions[coin] = {"error": str(e)}
+        
+        conn.close()
+        
+        return {
+            "predictions": predictions,
+            "timestamp": asyncio.get_event_loop().time(),
+            "total_coins": len(predictions)
+        }
+        
+    except Exception as e:
+        logger.error(f"주요 코인 예측 API 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"Top coins prediction API error: {e}")
+
+@app.get("/api/analysis/volume-signals")
+async def get_volume_signals():
+    """
+    거래량 신호 분석 - 비정상 거래량 활동 탐지
+    """
+    major_coins = ["KRW-BTC", "KRW-ETH", "KRW-XRP"]
+    
+    try:
+        conn = get_db_connection()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        volume_signals = {}
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            for coin in major_coins:
+                try:
+                    cursor.execute(
+                        "SELECT * FROM analyze_volume_confirmation(%s, 1.5) ORDER BY time DESC LIMIT 5;",
+                        (coin,)
+                    )
+                    results = cursor.fetchall()
+                    
+                    volume_signals[coin] = [dict(row) for row in results] if results else []
+                    
+                except Exception as e:
+                    logger.warning(f"{coin} 거래량 분석 오류: {e}")
+                    volume_signals[coin] = []
+        
+        conn.close()
+        
+        return {
+            "volume_signals": volume_signals,
+            "timestamp": asyncio.get_event_loop().time()
+        }
+        
+    except Exception as e:
+        logger.error(f"거래량 신호 API 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"Volume signals API error: {e}")
 
 if __name__ == "__main__":
     import uvicorn

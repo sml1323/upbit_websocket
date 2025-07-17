@@ -209,6 +209,7 @@ services:
     networks:
       - upbit-network
     restart: unless-stopped
+  # FastAPI Dashboard Backend
   dashboard-server:
     build:
       context: ./dashboard # dashboard/main.py가 있는 디렉토리
@@ -230,6 +231,25 @@ services:
     networks:
       - upbit-network
     restart: unless-stopped
+
+# NextJS React Dashboard Frontend - 개발 모드에서는 직접 실행
+  # dashboard-frontend:
+  #   build:
+  #     context: ./dashboard-react
+  #     dockerfile: Dockerfile
+  #   container_name: dashboard-frontend
+  #   ports:
+  #     - "3000:3000" # NextJS 기본 포트
+  #   depends_on:
+  #     - dashboard-server
+  #   environment:
+  #     - FASTAPI_BASE_URL=http://dashboard-server:8000
+  #     - NEXT_PUBLIC_WS_URL=ws://localhost:8001
+  #     - NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
+  #     - NODE_ENV=production
+  #   networks:
+  #     - upbit-network
+  #   restart: unless-stopped
 
 volumes:
   timescaledb-data:
