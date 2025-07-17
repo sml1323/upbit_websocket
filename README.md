@@ -2,20 +2,27 @@
 
 실시간 암호화폐 데이터 분석 및 LLM 기반 질의응답 시스템
 
+![Upbit LLM Analytics Dashboard](images/dashboard.jpg)
+
 ## 📊 주요 기능
 
-### ✅ 완료된 기능 (Week 3)
+### ✅ 완료된 기능 (2025-07-17 업데이트)
 1. **실시간 시장 요약 생성기** - 5분 간격으로 전체 시장 분위기 분석
 2. **코인별 질의응답 시스템** - "BTC 어때?" 같은 자연어 질의 처리
 3. **이상 거래 탐지 알림** - 거래량/가격 급변동 실시간 감지
+4. **기술적 지표 분석** - RSI, 볼린저 밴드, 이동평균선 등
+5. **예측 분석 시스템** - 5분/15분/1시간 가격 예측
+6. **통합 대시보드** - FastAPI + React 이중 대시보드 구축
+7. **자동화된 인프라** - 원클릭 시작 및 헬스체크 시스템
 
 ### 🔧 기술 스택
-- **데이터 수집**: Upbit WebSocket API
-- **메시지 브로커**: Apache Kafka
-- **데이터베이스**: PostgreSQL + TimescaleDB
-- **LLM 연동**: OpenAI GPT-4o-mini
-- **실시간 알림**: WebSocket
-- **인프라**: Docker Compose
+- **데이터 수집**: Upbit WebSocket API (22개 필드 완전 수집)
+- **메시지 브로커**: Apache Kafka + Zookeeper
+- **데이터베이스**: PostgreSQL + TimescaleDB (시계열 최적화)
+- **LLM 연동**: OpenAI GPT-4o-mini (토큰 효율성 99% 개선)
+- **실시간 알림**: WebSocket + Server-Sent Events
+- **웹 인터페이스**: FastAPI + React (NextJS)
+- **인프라**: Docker Compose + 자동화 스크립트
 
 ## 🚀 빠른 시작
 
@@ -89,31 +96,58 @@ open http://localhost:3000    # React 대시보드 (수동 시작)
 
 ## 🔧 서비스 접속 정보
 
-| 서비스 | 포트 | 접속 정보 |
-|--------|------|-----------|
-| TimescaleDB | 5432 | upbit_user/upbit_password |
-| Kafka | 9092 | localhost:9092 |
-| MCP Server | 9093 | localhost:9093 |
-| Redis | 6379 | localhost:6379 |
-| WebSocket | 8765 | ws://localhost:8765 |
+| 서비스 | 포트 | 접속 정보 | 설명 |
+|--------|------|-----------|------|
+| **웹 서비스** | | | |
+| FastAPI Dashboard | 8001 | http://localhost:8001 | 메인 대시보드 |
+| API 문서 | 8001 | http://localhost:8001/docs | Swagger UI |
+| React Dashboard | 3000 | http://localhost:3000 | 개발용 대시보드 |
+| Coin Q&A API | 8080 | http://localhost:8080 | 질의응답 API |
+| Market Summary WS | 8765 | ws://localhost:8765 | 실시간 시장 요약 |
+| **인프라 서비스** | | | |
+| TimescaleDB | 5432 | upbit_user/upbit_password | 시계열 데이터베이스 |
+| Kafka | 9092 | localhost:9092 | 메시지 브로커 |
+| Zookeeper | 2181 | localhost:2181 | Kafka 클러스터 관리 |
+| Redis | 6379 | localhost:6379 | 캐시 서버 |
 
 ## 📁 프로젝트 구조
 
 ```
 upbit_websocket/
-├── docker-compose.yml              # 통합 Docker Compose 설정
-├── start_services.sh              # 서비스 시작 스크립트
-├── .env                           # 환경 변수 설정
-├── upbit-kafka/
-│   ├── producer.py                # Upbit 데이터 수집
-│   └── consumer.py                # 데이터 저장
-├── realtime_market_summary.py     # 실시간 시장 요약
-├── coin_qa_system.py              # 코인 질의응답
-├── market_summary_client.html     # 웹 클라이언트
-├── schema/
-│   ├── ticker_data_schema.sql     # 데이터베이스 스키마
-│   └── mcp_functions.sql          # MCP 함수들
-└── tasks.md                       # 개발 진행사항
+├── 🚀 start.sh                    # 통합 시작 스크립트 (메인 진입점)
+├── 📋 troubleshoot.md             # 문제 해결 가이드
+├── 📊 docker-compose.yml          # 통합 Docker Compose 설정
+├── 🎯 tasks.md                    # 개발 진행사항
+├── 📷 images/                     # 스크린샷 및 이미지
+│   └── dashboard.jpg              # 대시보드 스크린샷
+├── 🔧 shared/                     # 공통 모듈 (리팩터링 핵심)
+│   ├── requirements.txt           # 통합 의존성
+│   ├── config.py                  # 중앙화된 설정 관리
+│   ├── database.py                # DB 연결 풀링 및 헬스체크
+│   ├── health-check.py            # 서비스 의존성 대기
+│   ├── validate-env.py            # 환경 설정 검증
+│   └── docker-build.sh            # Docker 이미지 빌드
+├── 📊 schema/                     # 데이터베이스 스키마
+│   ├── 00-init-timescaledb.sql    # 자동 초기화 스크립트
+│   ├── 01-auto-deploy.sql         # 자동 스키마 배포
+│   ├── ticker_data_schema.sql     # 메인 테이블 스키마
+│   ├── mcp_functions.sql          # MCP 함수들
+│   ├── technical_indicators.sql   # 기술적 지표 함수
+│   └── prediction_algorithms.sql  # 예측 알고리즘 함수
+├── 🔄 upbit-kafka/               # 데이터 파이프라인
+│   ├── producer.py                # Upbit 데이터 수집 (22필드)
+│   └── consumer.py                # 데이터 저장 (TimescaleDB)
+├── 🎯 mvp-services/               # MVP 서비스들
+│   ├── realtime_market_summary.py # 실시간 시장 요약
+│   ├── coin_qa_system.py          # 코인 질의응답
+│   ├── anomaly_detection_system.py # 이상 거래 탐지
+│   └── market_summary_client.html # 웹 클라이언트
+├── 🌐 dashboard/                  # FastAPI 대시보드
+│   ├── main.py                    # FastAPI 메인 서버
+│   └── server.py                  # 대시보드 서버
+└── ⚛️ dashboard-react/            # React 대시보드
+    ├── src/                       # React 컴포넌트
+    └── package.json               # Node.js 의존성
 ```
 
 ## ⚙️ 설정 파일
