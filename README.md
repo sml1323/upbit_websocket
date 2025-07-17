@@ -25,36 +25,50 @@
 git clone <repository-url>
 cd upbit_websocket
 
-# 환경 변수 설정 (.env 파일 생성)
-cp .env.example .env
-# OpenAI API 키 설정 필요
+# Python 의존성 설치
+pip install -r shared/requirements.txt
+
+# 환경 변수 설정
+python shared/validate-env.py --generate-template > .env
+# .env 파일에서 OPENAI_API_KEY 설정 필요
 ```
 
-### 2. 서비스 시작
+### 2. 전체 시스템 시작 (권장)
 ```bash
-# 모든 인프라 서비스 시작 (자동 설정 포함)
-./start_services.sh
+# 환경 검증 후 전체 시스템 시작
+./start.sh
+
+# 완전히 새로 시작 (볼륨 삭제)
+./start.sh --clean
+
+# React 대시보드와 함께 시작
+./start.sh --start-react
 ```
 
-### 3. 애플리케이션 실행
+### 3. 수동 시작 (고급 사용자)
 ```bash
-# 터미널 1: 데이터 수집
-python upbit-kafka/producer.py
+# 1단계: 환경 검증
+python shared/validate-env.py
 
-# 터미널 2: 데이터 저장
-python upbit-kafka/consumer.py
+# 2단계: 인프라 서비스 시작
+docker compose up -d timescaledb zookeeper kafka redis
 
-# 터미널 3: 실시간 시장 요약
-python realtime_market_summary.py
+# 3단계: 데이터 파이프라인 시작
+docker compose up -d upbit-producer upbit-consumer
 
-# 터미널 4: 코인 질의응답
-python coin_qa_system.py
+# 4단계: MVP 서비스 시작
+docker compose up -d mvp-market-summary mvp-coin-qa mvp-anomaly-detection
+
+# 5단계: 대시보드 시작
+docker compose up -d dashboard-server
 ```
 
-### 4. 웹 클라이언트 접속
+### 4. 서비스 접속
 ```bash
-# 브라우저에서 열기
-open market_summary_client.html
+# 웹 서비스
+open http://localhost:8001    # FastAPI 대시보드
+open http://localhost:8001/docs  # API 문서
+open http://localhost:3000    # React 대시보드 (수동 시작)
 ```
 
 ## 🎯 사용 예시

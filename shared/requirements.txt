@@ -1,0 +1,36 @@
+# Upbit LLM Analytics Platform - Unified Dependencies
+# 모든 서비스의 의존성을 통합하여 버전 충돌 방지
+
+# Kafka 메시지 브로커
+confluent-kafka==2.8.0
+
+# PostgreSQL/TimescaleDB 연결
+psycopg2-binary==2.9.10
+
+# WebSocket 연결 (Upbit API)
+websockets==14.2
+
+# 환경 변수 관리
+python-dotenv==1.0.1
+
+# HTTP 요청
+requests==2.32.3
+httpx==0.25.2
+
+# 기본 유틸리티
+python-dateutil==2.9.0.post0
+
+# LLM 연동
+openai==1.56.2
+
+# 수치 계산 (이상 탐지용)
+numpy==1.24.3
+
+# 웹 인터페이스 (FastAPI)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.3
+python-multipart==0.0.6
+
+# 추가 유틸리티
+# - sqlalchemy (필요시)

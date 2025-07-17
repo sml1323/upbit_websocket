@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import logging
 from datetime import datetime, timezone
@@ -10,16 +11,17 @@ import psycopg2
 from psycopg2.extensions import connection as Connection
 from psycopg2 import sql
 
-load_dotenv()
+# Import shared modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.config import get_config, setup_logging
+from shared.database import get_db_connection_context
 
-KAFKA_SERVERS = os.getenv("KAFKA_SERVERS", "localhost:9092")
-KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "upbit_ticker")
-KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "default_group")
-DB_NAME = os.getenv("TIMESCALEDB_DBNAME", "upbit_analytics")
-DB_USER = os.getenv("TIMESCALEDB_USER", "upbit_user")
-DB_PASSWORD = os.getenv("TIMESCALEDB_PASSWORD", "upbit_password")
-DB_HOST = os.getenv("TIMESCALEDB_HOST", "localhost")
-DB_PORT = os.getenv("TIMESCALEDB_PORT", "5432")
+load_dotenv()
+setup_logging('consumer')
+
+# Get configuration
+config = get_config()
+kafka_config = config.kafka
 
 POLL_TIMEOUT = 1.0
 INSERT_QUERY = """

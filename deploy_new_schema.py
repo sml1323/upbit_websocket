@@ -29,6 +29,7 @@ logging.basicConfig(
 def connect_db() -> Connection:
     """Create database connection."""
     try:
+        # Try to connect to the target database first
         conn = psycopg2.connect(
             dbname=DB_NAME,
             user=DB_USER,
@@ -38,6 +39,20 @@ def connect_db() -> Connection:
         )
         logging.info(f"Connected to database: {DB_NAME}")
         return conn
+    except psycopg2.OperationalError as e:
+        if "does not exist" in str(e):
+            # If database doesn't exist, connect to postgres to create it
+            logging.info(f"Database {DB_NAME} doesn't exist, connecting to postgres")
+            conn = psycopg2.connect(
+                dbname="postgres",
+                user=DB_USER,
+                password=DB_PASSWORD,
+                host=DB_HOST,
+                port=DB_PORT
+            )
+            return conn
+        else:
+            raise
     except Exception as e:
         logging.error(f"Failed to connect to database: {e}")
         raise

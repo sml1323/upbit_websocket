@@ -16,6 +16,7 @@ services:
     networks:
       - upbit-network
     restart: always
+    command: ["sh", "-c", "python /app/shared/health-check.py upbit-producer kafka && python producer.py"]
 
   # Upbit Kafka Consumer
   upbit-consumer:
@@ -40,6 +41,7 @@ services:
     networks:
       - upbit-network
     restart: always
+    command: ["sh", "-c", "python /app/shared/health-check.py upbit-consumer kafka timescaledb-schema && python consumer.py"]
   # TimescaleDB - 시계열 데이터베이스
   timescaledb:
     image: timescale/timescaledb:2.14.2-pg13

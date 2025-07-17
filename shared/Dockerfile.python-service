@@ -1,0 +1,32 @@
+# Service-specific Dockerfile that extends the base image
+# Usage: docker build -f shared/Dockerfile.python-service --build-arg SERVICE_DIR=upbit-kafka .
+
+ARG BASE_IMAGE=upbit-python-base:latest
+FROM ${BASE_IMAGE}
+
+# Build argument for service directory
+ARG SERVICE_DIR
+ARG SERVICE_NAME
+
+# Copy service-specific code
+COPY ${SERVICE_DIR}/ /app/service/
+
+# Set working directory to service
+WORKDIR /app/service
+
+# Install service-specific requirements if they exist
+RUN if [ -f "requirements.txt" ]; then \
+    pip install --no-cache-dir -r requirements.txt; \
+    fi
+
+# Change ownership to appuser
+USER root
+RUN chown -R appuser:appuser /app/service
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.path.append('/app'); from shared.database import check_db_health; exit(0 if check_db_health() else 1)"
+
+# Default command (should be overridden)
+CMD ["python", "--version"]
