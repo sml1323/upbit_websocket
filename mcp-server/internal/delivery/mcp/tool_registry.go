@@ -138,6 +138,15 @@ func (tr *ToolRegistry) registerDatabaseTools(ctx context.Context, dbID string) 
 			} else {
 				logger.Info("Successfully registered TimescaleDB time series analyze tool: %s", tsAnalyzeToolName)
 			}
+
+			// Register cryptocurrency surge detection tool
+			surgeToolName := fmt.Sprintf("detect_surging_cryptocurrencies_%s", dbID)
+			if err := tr.registerTool(ctx, "detect_surging_cryptocurrencies", surgeToolName, dbID); err != nil {
+				logger.Error("Error registering surge detection tool: %v", err)
+				registrationErrors++
+			} else {
+				logger.Info("Successfully registered cryptocurrency surge detection tool: %s", surgeToolName)
+			}
 		}
 
 		if registrationErrors > 0 {

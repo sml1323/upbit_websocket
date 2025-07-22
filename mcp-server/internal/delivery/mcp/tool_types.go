@@ -522,6 +522,240 @@ func (t *ListDatabasesTool) HandleRequest(ctx context.Context, request server.To
 }
 
 //------------------------------------------------------------------------------
+// SurgeTool implementation
+//------------------------------------------------------------------------------
+
+// SurgeTool handles cryptocurrency surge detection and analysis
+type SurgeTool struct {
+	BaseToolType
+}
+
+// NewSurgeTool creates a new surge detection tool type
+func NewSurgeTool() *SurgeTool {
+	return &SurgeTool{
+		BaseToolType: BaseToolType{
+			name:        "detect_surging_cryptocurrencies",
+			description: "Detect and analyze surging cryptocurrencies",
+		},
+	}
+}
+
+// CreateTool creates a surge detection tool
+func (t *SurgeTool) CreateTool(name string, dbID string) interface{} {
+	return tools.NewTool(
+		name,
+		tools.WithDescription(t.GetDescription(dbID)),
+		tools.WithString("analysis_type",
+			tools.Description("Type of surge analysis (gainers, volume_spike, anomalies, comprehensive)"),
+			tools.Required(),
+		),
+		tools.WithNumber("timeframe_hours",
+			tools.Description("Timeframe for analysis in hours (default: 1)"),
+		),
+		tools.WithNumber("result_limit",
+			tools.Description("Maximum number of results to return (default: 10)"),
+		),
+		tools.WithNumber("sensitivity",
+			tools.Description("Detection sensitivity level 1-5 (default: 3)"),
+		),
+		tools.WithNumber("min_change_rate",
+			tools.Description("Minimum change rate percentage for surge detection (default: 5.0)"),
+		),
+	)
+}
+
+// HandleRequest handles surge detection tool requests
+func (t *SurgeTool) HandleRequest(ctx context.Context, request server.ToolCallRequest, dbID string, useCase UseCaseProvider) (interface{}, error) {
+	// If dbID is not provided, extract it from the tool name
+	if dbID == "" {
+		dbID = extractDatabaseIDFromName(request.Name)
+	}
+
+	analysisType, ok := request.Parameters["analysis_type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("analysis_type parameter must be a string")
+	}
+
+	// Default parameters
+	timeframeHours := 1
+	resultLimit := 10
+	sensitivity := 3
+	minChangeRate := 5.0
+
+	// Parse optional parameters
+	if request.Parameters["timeframe_hours"] != nil {
+		if hours, ok := request.Parameters["timeframe_hours"].(float64); ok {
+			timeframeHours = int(hours)
+		}
+	}
+
+	if request.Parameters["result_limit"] != nil {
+		if limit, ok := request.Parameters["result_limit"].(float64); ok {
+			resultLimit = int(limit)
+		}
+	}
+
+	if request.Parameters["sensitivity"] != nil {
+		if sens, ok := request.Parameters["sensitivity"].(float64); ok {
+			sensitivity = int(sens)
+		}
+	}
+
+	if request.Parameters["min_change_rate"] != nil {
+		if rate, ok := request.Parameters["min_change_rate"].(float64); ok {
+			minChangeRate = rate
+		}
+	}
+
+	var result string
+	var err error
+
+	switch analysisType {
+	case "gainers":
+		result, err = t.analyzeGainers(ctx, useCase, dbID, timeframeHours, resultLimit, minChangeRate)
+	case "volume_spike":
+		result, err = t.analyzeVolumeSpikes(ctx, useCase, dbID, timeframeHours, resultLimit, sensitivity)
+	case "anomalies":
+		result, err = t.analyzeAnomalies(ctx, useCase, dbID, timeframeHours, sensitivity)
+	case "comprehensive":
+		result, err = t.comprehensiveAnalysis(ctx, useCase, dbID, timeframeHours, resultLimit, sensitivity, minChangeRate)
+	default:
+		return nil, fmt.Errorf("unsupported analysis_type: %s. Supported types: gainers, volume_spike, anomalies, comprehensive", analysisType)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return createTextResponse(result), nil
+}
+
+// analyzeGainers focuses on price surge detection
+func (t *SurgeTool) analyzeGainers(ctx context.Context, useCase UseCaseProvider, dbID string, timeframeHours, resultLimit int, minChangeRate float64) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT code, price, change_rate, volume_change, momentum, market_sentiment
+		FROM get_market_movers('gainers', %d, %d)
+		WHERE change_rate >= %f
+		ORDER BY change_rate DESC;
+	`, resultLimit, timeframeHours, minChangeRate)
+
+	result, err := useCase.ExecuteQuery(ctx, dbID, query, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to analyze gainers: %w", err)
+	}
+
+	return fmt.Sprintf("🚀 SURGE ANALYSIS - Price Gainers (≥%.1f%% in %dh):\n\n%s", minChangeRate, timeframeHours, result), nil
+}
+
+// analyzeVolumeSpikes focuses on volume-based surge detection
+func (t *SurgeTool) analyzeVolumeSpikes(ctx context.Context, useCase UseCaseProvider, dbID string, timeframeHours, resultLimit, sensitivity int) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT code, price, change_rate, volume_change, momentum
+		FROM get_market_movers('volume', %d, %d)
+		WHERE volume_change > 150.0
+		ORDER BY volume_change DESC;
+	`, resultLimit, timeframeHours)
+
+	result, err := useCase.ExecuteQuery(ctx, dbID, query, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to analyze volume spikes: %w", err)
+	}
+
+	return fmt.Sprintf("📊 SURGE ANALYSIS - Volume Spikes (>150%% increase in %dh):\n\n%s", timeframeHours, result), nil
+}
+
+// analyzeAnomalies focuses on anomaly-based surge detection
+func (t *SurgeTool) analyzeAnomalies(ctx context.Context, useCase UseCaseProvider, dbID string, timeframeHours, sensitivity int) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT anomaly_type, code, severity, spike_ratio, price_change, description
+		FROM detect_anomalies(%d, %d)
+		WHERE severity IN ('critical', 'high')
+		ORDER BY 
+			CASE severity 
+				WHEN 'critical' THEN 1
+				WHEN 'high' THEN 2
+				ELSE 3
+			END,
+			spike_ratio DESC, price_change DESC;
+	`, timeframeHours, sensitivity)
+
+	result, err := useCase.ExecuteQuery(ctx, dbID, query, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to analyze anomalies: %w", err)
+	}
+
+	return fmt.Sprintf("⚡ SURGE ANALYSIS - Market Anomalies (Critical & High severity in %dh):\n\n%s", timeframeHours, result), nil
+}
+
+// comprehensiveAnalysis combines multiple detection methods
+func (t *SurgeTool) comprehensiveAnalysis(ctx context.Context, useCase UseCaseProvider, dbID string, timeframeHours, resultLimit, sensitivity int, minChangeRate float64) (string, error) {
+	var result strings.Builder
+
+	// 1. Market Overview
+	overviewQuery := "SELECT * FROM get_market_overview();"
+	overview, err := useCase.ExecuteQuery(ctx, dbID, overviewQuery, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get market overview: %w", err)
+	}
+	result.WriteString(fmt.Sprintf("📈 COMPREHENSIVE SURGE ANALYSIS (%dh timeframe)\n\n", timeframeHours))
+	result.WriteString("=== MARKET OVERVIEW ===\n")
+	result.WriteString(overview)
+	result.WriteString("\n\n")
+
+	// 2. Top Gainers
+	gainersQuery := fmt.Sprintf(`
+		SELECT code, price, change_rate, momentum, market_sentiment
+		FROM get_market_movers('gainers', %d, %d)
+		WHERE change_rate >= %f
+		ORDER BY change_rate DESC LIMIT 5;
+	`, resultLimit, timeframeHours, minChangeRate)
+
+	gainers, err := useCase.ExecuteQuery(ctx, dbID, gainersQuery, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get top gainers: %w", err)
+	}
+	result.WriteString("=== TOP SURGING COINS (Price) ===\n")
+	result.WriteString(gainers)
+	result.WriteString("\n\n")
+
+	// 3. Volume Anomalies
+	volumeQuery := fmt.Sprintf(`
+		SELECT code, severity, spike_ratio, description
+		FROM detect_anomalies(%d, %d)
+		WHERE anomaly_type = 'volume_spike' 
+		  AND severity IN ('critical', 'high')
+		ORDER BY spike_ratio DESC LIMIT 5;
+	`, timeframeHours, sensitivity)
+
+	volumeAnomalies, err := useCase.ExecuteQuery(ctx, dbID, volumeQuery, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get volume anomalies: %w", err)
+	}
+	result.WriteString("=== VOLUME SURGE ALERTS ===\n")
+	result.WriteString(volumeAnomalies)
+	result.WriteString("\n\n")
+
+	// 4. Price Volatility Alerts
+	priceQuery := fmt.Sprintf(`
+		SELECT code, severity, price_change, description
+		FROM detect_anomalies(%d, %d)
+		WHERE anomaly_type = 'price_volatility'
+		  AND severity IN ('critical', 'high')
+		ORDER BY price_change DESC LIMIT 5;
+	`, timeframeHours, sensitivity)
+
+	priceAnomalies, err := useCase.ExecuteQuery(ctx, dbID, priceQuery, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get price anomalies: %w", err)
+	}
+	result.WriteString("=== PRICE VOLATILITY ALERTS ===\n")
+	result.WriteString(priceAnomalies)
+	result.WriteString("\n")
+
+	return result.String(), nil
+}
+
+//------------------------------------------------------------------------------
 // ToolTypeFactory provides a factory for creating tool types
 //------------------------------------------------------------------------------
 
@@ -543,6 +777,7 @@ func NewToolTypeFactory() *ToolTypeFactory {
 	factory.Register(NewPerformanceTool())
 	factory.Register(NewSchemaTool())
 	factory.Register(NewListDatabasesTool())
+	factory.Register(NewSurgeTool()) // Register the new surge detection tool
 
 	return factory
 }

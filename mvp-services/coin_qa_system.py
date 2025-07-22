@@ -135,7 +135,7 @@ class CoinCodeMapper:
         return any(keyword in query_lower for keyword in coin_keywords)
 
 class DatabaseManager:
-    """TimescaleDB 연결 및 쿼리 관리"""
+    """TimescaleDB 연결 및 쿼리 관리 - MCP 함수들과 연동"""
     
     def __init__(self):
         self.config = {
@@ -151,7 +151,7 @@ class DatabaseManager:
         return psycopg2.connect(**self.config)
     
     def get_coin_summary(self, coin_code: str, timeframe_hours: int = 24) -> Optional[Dict]:
-        """특정 코인의 요약 정보 조회"""
+        """특정 코인의 요약 정보 조회 (MCP 함수 활용)"""
         try:
             with self.get_connection() as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -164,6 +164,105 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"코인 요약 조회 실패 ({coin_code}): {e}")
             return None
+    
+    def get_market_movers(self, move_type: str = 'gainers', result_limit: int = 10, timeframe_hours: int = 1) -> List[Dict]:
+        """시장에서 가장 활발한 코인들 조회 (MCP 함수 활용)"""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT * FROM get_market_movers(%s, %s, %s)",
+                        (move_type, result_limit, timeframe_hours)
+                    )
+                    return [dict(row) for row in cur.fetchall()]
+        except Exception as e:
+            logger.error(f"시장 동향 조회 실패 ({move_type}): {e}")
+            return []
+    
+    def detect_anomalies(self, timeframe_hours: int = 1, sensitivity: int = 3) -> List[Dict]:
+        """이상 거래 패턴 탐지 (MCP 함수 활용)"""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT * FROM detect_anomalies(%s, %s)",
+                        (timeframe_hours, sensitivity)
+                    )
+                    return [dict(row) for row in cur.fetchall()]
+        except Exception as e:
+            logger.error(f"이상 패턴 탐지 실패: {e}")
+            return []
+    
+    def get_market_overview(self) -> Optional[Dict]:
+        """전체 시장 요약 조회 (MCP 함수 활용)"""
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute("SELECT * FROM get_market_overview()")
+                    result = cur.fetchone()
+                    return dict(result) if result else None
+        except Exception as e:
+            logger.error(f"시장 전체 요약 조회 실패: {e}")
+            return None
+    
+    def detect_surging_cryptocurrencies(self, analysis_type: str = 'gainers', timeframe_hours: int = 1, 
+                                      result_limit: int = 10, sensitivity: int = 3, 
+                                      min_change_rate: float = 5.0) -> Dict:
+        """급등 코인 탐지 - 통합 분석 (새로운 MCP tool 시뮬레이션)"""
+        try:
+            result = {'analysis_type': analysis_type, 'results': []}
+            
+            if analysis_type == 'gainers':
+                # 급등 코인 분석
+                movers = self.get_market_movers('gainers', result_limit, timeframe_hours)
+                surge_coins = [
+                    coin for coin in movers 
+                    if coin.get('change_rate', 0) >= min_change_rate
+                ]
+                result['results'] = surge_coins
+                result['summary'] = f"≥{min_change_rate}% 급등한 {len(surge_coins)}개 코인 발견"
+                
+            elif analysis_type == 'volume_spike':
+                # 거래량 급증 분석
+                anomalies = self.detect_anomalies(timeframe_hours, sensitivity)
+                volume_spikes = [
+                    anomaly for anomaly in anomalies 
+                    if anomaly.get('anomaly_type') == 'volume_spike'
+                    and anomaly.get('severity') in ['critical', 'high']
+                ]
+                result['results'] = volume_spikes
+                result['summary'] = f"거래량 급증 {len(volume_spikes)}개 코인 탐지"
+                
+            elif analysis_type == 'anomalies':
+                # 이상 패턴 분석
+                anomalies = self.detect_anomalies(timeframe_hours, sensitivity)
+                critical_anomalies = [
+                    anomaly for anomaly in anomalies 
+                    if anomaly.get('severity') in ['critical', 'high']
+                ]
+                result['results'] = critical_anomalies
+                result['summary'] = f"고위험 이상 패턴 {len(critical_anomalies)}건 탐지"
+                
+            elif analysis_type == 'comprehensive':
+                # 종합 분석
+                overview = self.get_market_overview()
+                gainers = self.get_market_movers('gainers', 5, timeframe_hours)
+                volume_leaders = self.get_market_movers('volume', 5, timeframe_hours)
+                anomalies = self.detect_anomalies(timeframe_hours, sensitivity)
+                
+                result['results'] = {
+                    'market_overview': overview,
+                    'top_gainers': [g for g in gainers if g.get('change_rate', 0) >= min_change_rate],
+                    'volume_leaders': volume_leaders,
+                    'anomalies': [a for a in anomalies if a.get('severity') in ['critical', 'high']]
+                }
+                result['summary'] = f"종합 급등 분석: 상승 {len(result['results']['top_gainers'])}개, 거래량 {len(result['results']['volume_leaders'])}개, 이상패턴 {len(result['results']['anomalies'])}건"
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"급등 코인 탐지 실패 ({analysis_type}): {e}")
+            return {'analysis_type': analysis_type, 'results': [], 'summary': f'분석 실패: {str(e)}'}
     
     def get_coin_history(self, coin_code: str, hours: int = 24) -> List[Dict]:
         """코인 가격 히스토리 조회"""
@@ -209,7 +308,7 @@ class LLMAnalyzer:
         self.tools = self._define_tools()
     
     def _define_tools(self):
-        """OpenAI Tools 정의"""
+        """OpenAI Tools 정의 - MCP 함수들과 연동된 확장 버전"""
         return [
             {
                 "type": "function",
@@ -265,6 +364,112 @@ class LLMAnalyzer:
                     "parameters": {
                         "type": "object",
                         "properties": {},
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_market_movers",
+                    "description": "Get market movers including top gainers, losers, or highest volume cryptocurrencies. Use this when users ask about trending coins, market leaders, or active trading.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "move_type": {
+                                "type": "string",
+                                "description": "Type of market movement (gainers, losers, volume)",
+                                "enum": ["gainers", "losers", "volume"],
+                                "default": "gainers"
+                            },
+                            "result_limit": {
+                                "type": "integer",
+                                "description": "Number of results to return (default: 10)",
+                                "default": 10
+                            },
+                            "timeframe_hours": {
+                                "type": "integer",
+                                "description": "Timeframe for analysis in hours (default: 1)",
+                                "default": 1
+                            }
+                        },
+                        "required": ["move_type"],
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "detect_surging_cryptocurrencies",
+                    "description": "Detect and analyze surging cryptocurrencies using comprehensive analysis. Use this when users ask about surging coins, rapid price movements, or market anomalies.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "analysis_type": {
+                                "type": "string",
+                                "description": "Type of surge analysis",
+                                "enum": ["gainers", "volume_spike", "anomalies", "comprehensive"],
+                                "default": "comprehensive"
+                            },
+                            "timeframe_hours": {
+                                "type": "integer",
+                                "description": "Timeframe for analysis in hours (default: 1)",
+                                "default": 1
+                            },
+                            "result_limit": {
+                                "type": "integer", 
+                                "description": "Maximum results to return (default: 10)",
+                                "default": 10
+                            },
+                            "sensitivity": {
+                                "type": "integer",
+                                "description": "Detection sensitivity level 1-5 (default: 3)",
+                                "default": 3
+                            },
+                            "min_change_rate": {
+                                "type": "number",
+                                "description": "Minimum change rate percentage for surge detection (default: 5.0)",
+                                "default": 5.0
+                            }
+                        },
+                        "required": ["analysis_type"],
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_market_overview",
+                    "description": "Get overall market overview including market sentiment, rising/falling coin counts, and top performers. Use this when users ask about general market conditions or overall crypto market status.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function", 
+                "function": {
+                    "name": "detect_market_anomalies",
+                    "description": "Detect market anomalies including volume spikes and price volatility alerts. Use this when users ask about unusual market activity or potential trading opportunities.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "timeframe_hours": {
+                                "type": "integer",
+                                "description": "Timeframe for anomaly detection in hours (default: 1)",
+                                "default": 1
+                            },
+                            "sensitivity": {
+                                "type": "integer",
+                                "description": "Detection sensitivity level 1-5 (default: 3)",
+                                "default": 3
+                            }
+                        },
+                        "required": [],
                         "additionalProperties": False
                     }
                 }
@@ -380,6 +585,69 @@ class LLMAnalyzer:
                     "content": json.dumps({
                         "available_cryptocurrencies": available_coins[:20],  # 상위 20개만
                         "total_count": len(available_coins)
+                    })
+                }
+                
+            elif function_name == "get_market_movers":
+                move_type = arguments.get("move_type", "gainers")
+                result_limit = arguments.get("result_limit", 10)
+                timeframe_hours = arguments.get("timeframe_hours", 1)
+                
+                movers = db_manager.get_market_movers(move_type, result_limit, timeframe_hours)
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "move_type": move_type,
+                        "timeframe_hours": timeframe_hours,
+                        "results": movers[:result_limit],
+                        "total_count": len(movers)
+                    })
+                }
+            
+            elif function_name == "detect_surging_cryptocurrencies":
+                analysis_type = arguments.get("analysis_type", "comprehensive")
+                timeframe_hours = arguments.get("timeframe_hours", 1)
+                result_limit = arguments.get("result_limit", 10)
+                sensitivity = arguments.get("sensitivity", 3)
+                min_change_rate = arguments.get("min_change_rate", 5.0)
+                
+                surge_analysis = db_manager.detect_surging_cryptocurrencies(
+                    analysis_type, timeframe_hours, result_limit, sensitivity, min_change_rate
+                )
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps(surge_analysis)
+                }
+            
+            elif function_name == "get_market_overview":
+                overview = db_manager.get_market_overview()
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool", 
+                    "content": json.dumps({
+                        "market_overview": overview if overview else "No market data available"
+                    })
+                }
+            
+            elif function_name == "detect_market_anomalies":
+                timeframe_hours = arguments.get("timeframe_hours", 1)
+                sensitivity = arguments.get("sensitivity", 3)
+                
+                anomalies = db_manager.detect_anomalies(timeframe_hours, sensitivity)
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "timeframe_hours": timeframe_hours,
+                        "sensitivity": sensitivity,
+                        "anomalies": anomalies,
+                        "total_anomalies": len(anomalies)
                     })
                 }
                 
@@ -716,15 +984,18 @@ async def test_qa_system():
     print("Docker 컨테이너에서 자동 테스트를 실행합니다.")
     print("-" * 50)
     
-    # 테스트 질의 목록 (Tool 기반 - 다양한 자연어 패턴)
+    # 테스트 질의 목록 (Tool 기반 - MCP 함수들 활용 가능한 실제 질의)
     test_queries = [
         "비트코인 현재 상황 어떤가요?",
-        "Ethereum이 오늘 많이 올랐나요?", 
-        "요즘 알트코인 중에 뭐가 좋을까요?",
-        "XRP 투자해도 될까요?",
+        "이더리움이 오늘 많이 올랐나요?", 
+        "최근에 급등한 코인들 알려주세요",
+        "지금 거래량이 많은 코인 순위는?",
         "암호화폐 시장 전체적으로 어떤 상황인가요?",
-        "What's the current Bitcoin price trend?",
-        "최근에 급등한 코인 있나요?"
+        "이상한 거래 패턴이 있는 코인 찾아주세요",
+        "상위 상승 코인 10개 보여주세요",
+        "지금 시장에 급등 중인 코인이 있나요?",
+        "거래량 급증한 코인들 분석해주세요",
+        "최근 1시간 동안 이상 거래가 있었던 코인은?"
     ]
     
     for query in test_queries:
