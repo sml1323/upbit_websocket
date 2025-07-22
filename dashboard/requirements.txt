@@ -1,2 +1,5 @@
-# Use shared requirements from parent directory
--r ../shared/requirements.txt
+fastapi==0.104.1
+uvicorn==0.24.0
+websockets==12.0
+httpx==0.25.2
+psycopg2-binary==2.9.9
