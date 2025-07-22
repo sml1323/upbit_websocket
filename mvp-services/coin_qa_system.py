@@ -202,10 +202,280 @@ class DatabaseManager:
             return []
 
 class LLMAnalyzer:
-    """LLM 기반 코인 분석기"""
+    """LLM 기반 코인 분석기 (Tool-based)"""
     
     def __init__(self):
         self.model = "gpt-4o-mini"  # 비용 효율적인 모델 사용
+        self.tools = self._define_tools()
+    
+    def _define_tools(self):
+        """OpenAI Tools 정의"""
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_cryptocurrency_analysis",
+                    "description": "Get detailed analysis of a specific cryptocurrency including current price, trends, volume, and market data. Call this when users ask about any cryptocurrency analysis, price, or trends.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "cryptocurrency_symbol": {
+                                "type": "string",
+                                "description": "Cryptocurrency symbol or name in various formats (e.g., BTC, Bitcoin, 비트코인, ETH, Ethereum, XRP, Ripple, etc.)"
+                            },
+                            "timeframe_hours": {
+                                "type": "integer",
+                                "description": "Analysis timeframe in hours (default: 24)",
+                                "default": 24
+                            }
+                        },
+                        "required": ["cryptocurrency_symbol"],
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function", 
+                "function": {
+                    "name": "get_cryptocurrency_price_history",
+                    "description": "Get price and volume history for a specific cryptocurrency. Use this for trend analysis and historical data queries.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "cryptocurrency_symbol": {
+                                "type": "string",
+                                "description": "Cryptocurrency symbol or name in various formats"
+                            },
+                            "hours": {
+                                "type": "integer", 
+                                "description": "Hours of historical data to retrieve (default: 24)",
+                                "default": 24
+                            }
+                        },
+                        "required": ["cryptocurrency_symbol"],
+                        "additionalProperties": False
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_available_cryptocurrencies", 
+                    "description": "Get list of all available cryptocurrencies for analysis. Use this when users ask about supported coins or want to see what's available.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False
+                    }
+                }
+            }
+        ]
+    
+    def handle_tool_call(self, tool_call, db_manager: DatabaseManager, code_mapper: CoinCodeMapper):
+        """Tool 호출 처리"""
+        function_name = tool_call.function.name
+        arguments = json.loads(tool_call.function.arguments)
+        
+        try:
+            if function_name == "get_cryptocurrency_analysis":
+                crypto_symbol = arguments["cryptocurrency_symbol"]
+                timeframe_hours = arguments.get("timeframe_hours", 24)
+                
+                # 코인 코드 변환 (BTC → KRW-BTC)
+                coin_code = code_mapper.extract_coin_code(crypto_symbol)
+                if not coin_code:
+                    return {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "content": json.dumps({
+                            "error": f"Cryptocurrency '{crypto_symbol}' not found or not supported"
+                        })
+                    }
+                
+                # 코인 데이터 조회
+                coin_data = db_manager.get_coin_summary(coin_code, timeframe_hours)
+                if not coin_data:
+                    return {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool", 
+                        "content": json.dumps({
+                            "error": f"No data available for {crypto_symbol} ({coin_code})"
+                        })
+                    }
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "coin_code": coin_code,
+                        "symbol": crypto_symbol,
+                        "current_price": float(coin_data.get("current_price", 0)) if coin_data.get("current_price") else None,
+                        "change_rate": float(coin_data.get("change_rate", 0)) if coin_data.get("change_rate") else None, 
+                        "trend": str(coin_data.get("trend", "")),
+                        "volume_spike": bool(coin_data.get("volume_spike", False)),
+                        "volatility": str(coin_data.get("volatility", "")),
+                        "support_level": float(coin_data.get("support_level", 0)) if coin_data.get("support_level") else None,
+                        "resistance_level": float(coin_data.get("resistance_level", 0)) if coin_data.get("resistance_level") else None,
+                        "analysis_summary": str(coin_data.get("analysis_summary", "No summary available")),
+                        "timeframe_hours": timeframe_hours
+                    })
+                }
+                
+            elif function_name == "get_cryptocurrency_price_history":
+                crypto_symbol = arguments["cryptocurrency_symbol"]
+                hours = arguments.get("hours", 24)
+                
+                # 코인 코드 변환
+                coin_code = code_mapper.extract_coin_code(crypto_symbol)
+                if not coin_code:
+                    return {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "content": json.dumps({
+                            "error": f"Cryptocurrency '{crypto_symbol}' not found"
+                        })
+                    }
+                
+                # 히스토리 데이터 조회
+                history = db_manager.get_coin_history(coin_code, hours)
+                if not history:
+                    return {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "content": json.dumps({
+                            "error": f"No historical data available for {crypto_symbol}"
+                        })
+                    }
+                
+                # 최근 10개 데이터만 전송 (토큰 절약)
+                recent_history = history[:10]
+                formatted_history = [
+                    {
+                        "time": str(h["time"]),
+                        "price": float(h["trade_price"]),
+                        "volume": float(h["trade_volume"]),
+                        "change_rate": float(h.get("change_rate", 0))
+                    }
+                    for h in recent_history
+                ]
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "coin_code": coin_code,
+                        "symbol": crypto_symbol,
+                        "history": formatted_history,
+                        "total_records": len(history),
+                        "hours": hours
+                    })
+                }
+                
+            elif function_name == "list_available_cryptocurrencies":
+                available_coins = db_manager.get_available_coins()
+                
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "available_cryptocurrencies": available_coins[:20],  # 상위 20개만
+                        "total_count": len(available_coins)
+                    })
+                }
+                
+            else:
+                return {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "content": json.dumps({
+                        "error": f"Unknown function: {function_name}"
+                    })
+                }
+                
+        except Exception as e:
+            logger.error(f"Tool 호출 처리 실패 ({function_name}): {e}")
+            return {
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "content": json.dumps({
+                    "error": f"Tool execution failed: {str(e)}"
+                })
+            }
+    
+    def process_query_with_tools(self, query: str, db_manager: DatabaseManager, code_mapper: CoinCodeMapper) -> str:
+        """Tool 기반 질의 처리"""
+        
+        system_message = """당신은 암호화폐 전문 분석가입니다. 
+사용자의 질문에 대해 실시간 데이터를 기반으로 정확하고 유용한 분석을 제공하세요.
+
+분석 시 다음을 포함하세요:
+- 현재 가격과 변동률
+- 시장 동향 및 트렌드 
+- 거래량 분석
+- 간단한 투자 의견 (위험 경고 포함)
+
+답변은 한국어로 3-5줄 내외로 간결하고 이해하기 쉽게 작성하세요."""
+
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": query}
+        ]
+        
+        try:
+            # 첫 번째 API 호출 (Tools 포함)
+            response = openai_client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=self.tools,
+                tool_choice="auto",
+                max_tokens=800,
+                temperature=0.3
+            )
+            
+            response_message = response.choices[0].message
+            
+            # Tool 호출이 있는 경우
+            if response_message.tool_calls:
+                logger.info(f"Tool 호출 감지: {len(response_message.tool_calls)}개")
+                
+                # 메시지에 AI 응답 추가
+                messages.append({
+                    "role": "assistant",
+                    "content": response_message.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": tc.type,
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments
+                            }
+                        } for tc in response_message.tool_calls
+                    ]
+                })
+                
+                # 각 Tool 호출 처리
+                for tool_call in response_message.tool_calls:
+                    tool_result = self.handle_tool_call(tool_call, db_manager, code_mapper)
+                    messages.append(tool_result)
+                
+                # 최종 응답 생성
+                final_response = openai_client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=400,
+                    temperature=0.3
+                )
+                
+                return final_response.choices[0].message.content.strip()
+            
+            else:
+                # Tool 호출 없이 직접 응답
+                return response_message.content.strip()
+                
+        except Exception as e:
+            logger.error(f"Tool 기반 질의 처리 실패: {e}")
+            return f"⚠️ 질의 처리 중 오류가 발생했습니다: {str(e)}"
         
     def analyze_coin_data(self, coin_code: str, coin_data: Dict, history: List[Dict]) -> str:
         """코인 데이터를 분석하여 자연어 답변 생성"""
@@ -298,37 +568,21 @@ class CoinQASystem:
         }
     
     async def process_query(self, query: str) -> str:
-        """사용자 질의 처리"""
+        """사용자 질의 처리 (Tool 기반)"""
         
         self.query_stats['total_queries'] += 1
         
         try:
-            # 1. 코인 관련 질의인지 확인
-            if not self.code_mapper.is_coin_query(query):
-                return "🤔 죄송하지만 코인 관련 질문만 답변드릴 수 있습니다. 예: 'BTC 어때?', '비트코인 분석해줘'"
+            # Tool 기반 질의 처리 (키워드 매칭 제거)
+            response = self.llm_analyzer.process_query_with_tools(
+                query, 
+                self.db_manager, 
+                self.code_mapper
+            )
             
-            # 2. 코인 코드 추출
+            # 성공 통계 업데이트 (코인 코드 추출 시도)
             coin_code = self.code_mapper.extract_coin_code(query)
-            if not coin_code:
-                available_coins = self.db_manager.get_available_coins()[:10]  # 상위 10개만
-                return f"🔍 코인을 찾을 수 없습니다. 사용 가능한 코인: {', '.join(available_coins)}"
-            
-            # 3. 코인 데이터 조회
-            coin_data = self.db_manager.get_coin_summary(coin_code, 24)
-            if not coin_data:
-                return f"📊 {coin_code} 데이터를 찾을 수 없습니다. 코인 코드를 확인해 주세요."
-            
-            # 4. 히스토리 데이터 조회
-            history = self.db_manager.get_coin_history(coin_code, 24)
-            
-            # 5. LLM 분석
-            analysis = self.llm_analyzer.analyze_coin_data(coin_code, coin_data, history)
-            
-            # 6. 사용자 질의에 맞는 답변 생성
-            response = self.llm_analyzer.generate_response_to_query(query, coin_code, analysis)
-            
-            # 7. 통계 업데이트
-            self._update_stats(coin_code, query, True)
+            self._update_stats(coin_code or "UNKNOWN", query, True)
             
             return response
             
@@ -462,13 +716,15 @@ async def test_qa_system():
     print("Docker 컨테이너에서 자동 테스트를 실행합니다.")
     print("-" * 50)
     
-    # 테스트 질의 목록
+    # 테스트 질의 목록 (Tool 기반 - 다양한 자연어 패턴)
     test_queries = [
-        "BTC 어때?",
-        "비트코인 분석해줘", 
-        "이더리움 가격은?",
-        "W코인 어떄?",
-        "도지코인 매수하면 어떨까?"
+        "비트코인 현재 상황 어떤가요?",
+        "Ethereum이 오늘 많이 올랐나요?", 
+        "요즘 알트코인 중에 뭐가 좋을까요?",
+        "XRP 투자해도 될까요?",
+        "암호화폐 시장 전체적으로 어떤 상황인가요?",
+        "What's the current Bitcoin price trend?",
+        "최근에 급등한 코인 있나요?"
     ]
     
     for query in test_queries:
