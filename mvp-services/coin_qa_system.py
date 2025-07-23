@@ -314,13 +314,13 @@ class LLMAnalyzer:
                 "type": "function",
                 "function": {
                     "name": "get_cryptocurrency_analysis",
-                    "description": "Get detailed analysis of a specific cryptocurrency including current price, trends, volume, and market data. Call this when users ask about any cryptocurrency analysis, price, or trends.",
+                    "description": "Get detailed analysis of a specific cryptocurrency including current price, trends, volume, and market data. Call this when users ask about any cryptocurrency in any way (casual questions like '어때?', '어떤가요?', '분석해줘', '상황은?' or formal analysis requests). This tool should be used for ANY question mentioning a specific cryptocurrency.",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "cryptocurrency_symbol": {
                                 "type": "string",
-                                "description": "Cryptocurrency symbol or name in various formats (e.g., BTC, Bitcoin, 비트코인, ETH, Ethereum, XRP, Ripple, etc.)"
+                                "description": "Cryptocurrency symbol or name in various formats (e.g., BTC, Bitcoin, 비트코인, ETH, Ethereum, XRP, Ripple, DOGE, 도지코인, SOL, 솔라나, ADA, W코인, etc.). Extract this from casual questions like 'BTC 어때?', '비트코인 어떤가요?', '이더리움 상황은?'"
                             },
                             "timeframe_hours": {
                                 "type": "integer",
@@ -372,7 +372,7 @@ class LLMAnalyzer:
                 "type": "function",
                 "function": {
                     "name": "get_market_movers",
-                    "description": "Get market movers including top gainers, losers, or highest volume cryptocurrencies. Use this when users ask about trending coins, market leaders, or active trading.",
+                    "description": "Get market movers including top gainers, losers, or highest volume cryptocurrencies. Use this when users ask about trending coins, market leaders, active trading, or general market questions like '요즘 뭐가 좋아?', '어떤 코인이 올라가고 있어?', '급등하는 코인 있어?'.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -402,7 +402,7 @@ class LLMAnalyzer:
                 "type": "function",
                 "function": {
                     "name": "detect_surging_cryptocurrencies",
-                    "description": "Detect and analyze surging cryptocurrencies using comprehensive analysis. Use this when users ask about surging coins, rapid price movements, or market anomalies.",
+                    "description": "Detect and analyze surging cryptocurrencies using comprehensive analysis. Use this when users ask about surging coins, rapid price movements, market anomalies, or questions like '급등 코인 있어?', '갑자기 오른 코인은?', '이상한 움직임 보이는 코인은?'.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -442,7 +442,7 @@ class LLMAnalyzer:
                 "type": "function",
                 "function": {
                     "name": "get_market_overview",
-                    "description": "Get overall market overview including market sentiment, rising/falling coin counts, and top performers. Use this when users ask about general market conditions or overall crypto market status.",
+                    "description": "Get overall market overview including market sentiment, rising/falling coin counts, and top performers. Use this when users ask about general market conditions, overall crypto market status, or casual questions like '시장 어때?', '요즘 코인 시장 어떤가요?', '전체적으로 어떤 상황이에요?'.",
                     "parameters": {
                         "type": "object",
                         "properties": {},
@@ -454,7 +454,7 @@ class LLMAnalyzer:
                 "type": "function", 
                 "function": {
                     "name": "detect_market_anomalies",
-                    "description": "Detect market anomalies including volume spikes and price volatility alerts. Use this when users ask about unusual market activity or potential trading opportunities.",
+                    "description": "Detect market anomalies including volume spikes and price volatility alerts. Use this when users ask about unusual market activity, potential trading opportunities, or questions like '이상한 거래 있어?', '급등 신호 있나?', '뭔가 특이한 움직임 있어?'.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -673,16 +673,22 @@ class LLMAnalyzer:
     def process_query_with_tools(self, query: str, db_manager: DatabaseManager, code_mapper: CoinCodeMapper) -> str:
         """Tool 기반 질의 처리"""
         
-        system_message = """당신은 암호화폐 전문 분석가입니다. 
-사용자의 질문에 대해 실시간 데이터를 기반으로 정확하고 유용한 분석을 제공하세요.
+        system_message = """당신은 친근한 암호화폐 분석가입니다. 
 
-분석 시 다음을 포함하세요:
-- 현재 가격과 변동률
-- 시장 동향 및 트렌드 
-- 거래량 분석
-- 간단한 투자 의견 (위험 경고 포함)
+**중요: 사용자가 암호화폐나 코인에 대해 언급하는 모든 질문에 반드시 도구(tools)를 사용해 답변하세요.**
 
-답변은 한국어로 3-5줄 내외로 간결하고 이해하기 쉽게 작성하세요."""
+다음과 같은 질문들에 모두 적극적으로 응답하세요:
+- "BTC 어때?" → get_cryptocurrency_analysis 도구 사용
+- "비트코인 분석해줘" → get_cryptocurrency_analysis 도구 사용  
+- "이더리움 어떤가요?" → get_cryptocurrency_analysis 도구 사용
+- "도지코인 상황은?" → get_cryptocurrency_analysis 도구 사용
+- "요즘 뭐가 좋아?" → get_market_movers 도구 사용
+- "시장 어때?" → get_market_overview 도구 사용
+- "급등하는 코인 있어?" → detect_surging_cryptocurrencies 도구 사용
+
+**절대 "코인 관련 질문만 답변드릴 수 있습니다"라고 답하지 마세요. 대신 항상 적절한 도구를 사용해서 유용한 정보를 제공하세요.**
+
+답변은 한국어로 친근하고 간결하게 3-5줄 내외로 작성하되, 현재 가격, 변동률, 트렌드, 간단한 투자 의견을 포함하세요."""
 
         messages = [
             {"role": "system", "content": system_message},
@@ -695,9 +701,9 @@ class LLMAnalyzer:
                 model=self.model,
                 messages=messages,
                 tools=self.tools,
-                tool_choice="auto",
+                tool_choice="auto",  # Force tool usage when appropriate
                 max_tokens=800,
-                temperature=0.3
+                temperature=0.1  # Lower temperature for more consistent tool usage
             )
             
             response_message = response.choices[0].message
@@ -738,12 +744,60 @@ class LLMAnalyzer:
                 return final_response.choices[0].message.content.strip()
             
             else:
-                # Tool 호출 없이 직접 응답
-                return response_message.content.strip()
+                # Tool 호출 없이 직접 응답 - 코인 관련 질의인지 다시 확인
+                response_content = response_message.content.strip()
+                
+                # 만약 코인 관련 질의인데 도구를 호출하지 않았다면, 강제로 분석 시도
+                if self._is_crypto_related_query(query) and not response_content:
+                    logger.info("코인 관련 질의 감지, 분석 도구 강제 호출 시도")
+                    
+                    # 코인 코드 추출 시도
+                    coin_code = code_mapper.extract_coin_code(query)
+                    if coin_code:
+                        # 코인 요약 정보 가져오기
+                        coin_data = db_manager.get_coin_summary(coin_code, 24)
+                        if coin_data:
+                            # 간단한 분석 제공
+                            current_price = coin_data.get('current_price', 0)
+                            change_rate = coin_data.get('change_rate', 0)
+                            trend = coin_data.get('trend', '알 수 없음')
+                            
+                            if change_rate > 0:
+                                trend_emoji = "📈"
+                                trend_text = "상승"
+                            elif change_rate < 0:
+                                trend_emoji = "📉" 
+                                trend_text = "하락"
+                            else:
+                                trend_emoji = "➡️"
+                                trend_text = "보합"
+                                
+                            return f"{trend_emoji} **{coin_code}** 현재 상황\n\n💰 가격: {current_price:,.0f}원\n📊 변동률: {change_rate:+.2f}%\n📈 추세: {trend_text} ({trend})\n\n{'상승세가 이어지고 있네요!' if change_rate > 5 else '하락 중이니 주의하세요.' if change_rate < -5 else '안정적인 움직임을 보이고 있어요.'}"
+                
+                # 일반적인 응답 또는 코인과 무관한 질의
+                return response_content if response_content else "죄송해요, 좀 더 구체적으로 질문해 주시겠어요? 예: 'BTC 어때?', '비트코인 분석해줘' 등"
                 
         except Exception as e:
             logger.error(f"Tool 기반 질의 처리 실패: {e}")
             return f"⚠️ 질의 처리 중 오류가 발생했습니다: {str(e)}"
+    
+    def _is_crypto_related_query(self, query: str) -> bool:
+        """코인/암호화폐 관련 질의인지 간단히 판단"""
+        crypto_indicators = [
+            # 코인 이름들
+            'btc', '비트코인', 'bitcoin', 'eth', '이더리움', 'ethereum', 
+            'xrp', '리플', 'ripple', 'doge', '도지코인', 'dogecoin',
+            'ada', '카르다노', 'cardano', 'sol', '솔라나', 'solana',
+            'w코인', 'wcoin', 
+            # 일반적인 암호화폐 용어
+            '코인', 'coin', '암호화폐', 'crypto', '가격', 'price',
+            '어때', '어떤가', '분석', '상황', '시장', 'market',
+            '급등', '상승', '하락', '투자', '매수', '매도',
+            '거래량', 'volume', '추천', '전망'
+        ]
+        
+        query_lower = query.lower()
+        return any(indicator in query_lower for indicator in crypto_indicators)
         
     def analyze_coin_data(self, coin_code: str, coin_data: Dict, history: List[Dict]) -> str:
         """코인 데이터를 분석하여 자연어 답변 생성"""
@@ -984,18 +1038,23 @@ async def test_qa_system():
     print("Docker 컨테이너에서 자동 테스트를 실행합니다.")
     print("-" * 50)
     
-    # 테스트 질의 목록 (Tool 기반 - MCP 함수들 활용 가능한 실제 질의)
+    # 테스트 질의 목록 (매우 자연스러운 일상 대화 형태 포함)
     test_queries = [
-        "비트코인 현재 상황 어떤가요?",
-        "이더리움이 오늘 많이 올랐나요?", 
-        "최근에 급등한 코인들 알려주세요",
-        "지금 거래량이 많은 코인 순위는?",
-        "암호화폐 시장 전체적으로 어떤 상황인가요?",
-        "이상한 거래 패턴이 있는 코인 찾아주세요",
-        "상위 상승 코인 10개 보여주세요",
-        "지금 시장에 급등 중인 코인이 있나요?",
-        "거래량 급증한 코인들 분석해주세요",
-        "최근 1시간 동안 이상 거래가 있었던 코인은?"
+        "BTC 어때?",                        # 매우 간단한 질의
+        "비트코인 어떤가요?",               # 일반적인 질의
+        "이더리움 요즘 어떤 상황이에요?",    # 자연스러운 질의
+        "도지코인 분석해줘",               # 캐주얼한 요청
+        "W코인 상황은?",                   # 간단한 상태 질의
+        "솔라나 어떻게 보세요?",           # 의견 요청
+        "요즘 뭐가 좋아?",                 # 매우 캐주얼한 추천 질의
+        "급등하는 코인 있어?",             # 간단한 급등 질의
+        "시장 어때?",                      # 매우 간단한 시장 질의
+        "이상한 움직임 보이는 코인 있나?", # 자연스러운 이상 패턴 질의
+        "최근에 급등한 코인들 알려주세요",  # 정중한 요청
+        "거래량 많은 코인 순위는?",        # 구체적 질의
+        "암호화폐 시장 전체적으로 어떤 상황인가요?", # 전반적 질의
+        "뭔가 특이한 거래 있어?",          # 매우 캐주얼한 이상 거래 질의
+        "투자할 만한 코인 추천해줘"        # 투자 상담형 질의
     ]
     
     for query in test_queries:
