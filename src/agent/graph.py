@@ -3,6 +3,7 @@ from typing import TypedDict, Annotated
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
+from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
 from src.agent.tools.query_market import query_market_window
@@ -37,7 +38,7 @@ SYSTEM_PROMPT = """너는 암호화폐 시장 이상 감지 전문 분석가야.
 
 
 class AgentState(TypedDict):
-    messages: list
+    messages: Annotated[list, add_messages]
     anomaly: dict
     incident_id: str
 
@@ -54,7 +55,7 @@ def create_agent_graph():
     def call_model(state: AgentState) -> dict:
         messages = state["messages"]
         response = llm_with_tools.invoke(messages)
-        return {"messages": messages + [response]}
+        return {"messages": [response]}
 
     def should_continue(state: AgentState) -> str:
         last_message = state["messages"][-1]
