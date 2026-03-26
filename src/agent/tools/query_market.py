@@ -28,12 +28,12 @@ def query_market_window(coin_code: str, minutes: int = 60) -> str:
         ORDER BY bucket DESC
         LIMIT 60
     """
+    conn = None
     try:
         conn = psycopg2.connect(get_db_dsn())
         with conn.cursor() as cur:
             cur.execute(query, (coin_code, minutes))
             rows = cur.fetchall()
-        conn.close()
 
         if not rows:
             return f"{coin_code}: 최근 {minutes}분간 데이터 없음"
@@ -59,3 +59,6 @@ def query_market_window(coin_code: str, minutes: int = 60) -> str:
     except Exception as e:
         logger.error("시장 데이터 조회 실패: %s", e)
         return f"시장 데이터 조회 실패: {e}"
+    finally:
+        if conn:
+            conn.close()

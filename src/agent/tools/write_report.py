@@ -35,9 +35,11 @@ def write_incident_report(
         WHERE incident_id = %s::uuid
         RETURNING incident_id
     """
+    confidence_score = max(0.0, min(1.0, confidence_score))
     report_json = json.dumps({"text": report_text}, ensure_ascii=False)
     news_json = json.dumps({"raw": news_context}, ensure_ascii=False) if news_context else None
 
+    conn = None
     try:
         conn = psycopg2.connect(get_db_dsn())
         with conn.cursor() as cur:
@@ -54,3 +56,6 @@ def write_incident_report(
     except Exception as e:
         logger.error("리포트 저장 실패: %s", e)
         return f"리포트 저장 실패: {e}"
+    finally:
+        if conn:
+            conn.close()
