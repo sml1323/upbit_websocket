@@ -4,6 +4,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from src.config import get_db_dsn, setup_logging
 from src.detector.anomaly import check_warm_up, detect_anomalies, save_incident
 from src.agent.graph import analyze_anomaly
+from src.alerts.telegram import send_alert
 
 logger = setup_logging("scheduler")
 
@@ -30,6 +31,10 @@ def run_cycle():
         for anomaly in anomalies:
             incident_id = save_incident(conn, anomaly)
             analyze_anomaly(anomaly, incident_id)
+            send_alert(
+                anomaly.coin_code, anomaly.anomaly_type,
+                anomaly.severity, anomaly.z_score, incident_id,
+            )
 
     except Exception:
         logger.exception("감지 사이클 오류")
