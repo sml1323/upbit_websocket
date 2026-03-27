@@ -122,13 +122,36 @@ CREATE TABLE IF NOT EXISTS incidents (
     coin_code        TEXT NOT NULL,
     anomaly_type     TEXT NOT NULL,
     severity         TEXT NOT NULL,
-    z_score          DOUBLE PRECISION NOT NULL,
+    z_score          DOUBLE PRECISION,           -- nullable: ensemble may not have z-score
     agent_report     JSONB,
     news_context     JSONB,
     confidence_score DOUBLE PRECISION,
     source           TEXT DEFAULT 'live',
-    status           TEXT DEFAULT 'open'
+    status           TEXT DEFAULT 'open',
+    -- Ensemble fields
+    ensemble_score      DOUBLE PRECISION,
+    firing_indicators   TEXT[],                   -- e.g., {'zscore','rsi','bollinger_bands'}
+    indicator_details   JSONB                     -- per-indicator detail snapshots
 );
 
 CREATE INDEX IF NOT EXISTS idx_incidents_detected ON incidents (detected_at DESC);
 CREATE INDEX IF NOT EXISTS idx_incidents_code ON incidents (coin_code);
+
+-- ============================================================
+-- 6. indicator_snapshots (Grafana 시각화용)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS indicator_snapshots (
+    time         TIMESTAMPTZ      NOT NULL,
+    coin_code    TEXT             NOT NULL,
+    indicator    TEXT             NOT NULL,   -- 'zscore', 'bollinger_bands', 'rsi', 'vwap'
+    value        DOUBLE PRECISION,
+    is_anomaly   BOOLEAN          DEFAULT FALSE,
+    detail       JSONB
+);
+
+SELECT create_hypertable('indicator_snapshots', 'time', if_not_exists => TRUE);
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_code_time
+    ON indicator_snapshots (coin_code, time DESC);
+CREATE INDEX IF NOT EXISTS idx_snapshots_indicator
+    ON indicator_snapshots (indicator, time DESC);

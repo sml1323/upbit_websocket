@@ -1,9 +1,24 @@
+"""Legacy anomaly detection module — kept for backward compatibility.
+
+New code should import from:
+  src.detector.base      — Signal, EnsembleResult, IndicatorBase, IndicatorRegistry
+  src.detector.ensemble  — EnsembleScorer, save_incident, save_snapshots
+  src.detector.zscore    — ZScoreIndicator
+"""
+
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 import psycopg2
 
 from src.config import get_db_dsn, setup_logging
+
+# Re-exports for backward compatibility
+from src.detector.base import Signal, EnsembleResult, IndicatorBase, IndicatorRegistry  # noqa: F401
+from src.detector.zscore import ZScoreIndicator  # noqa: F401
+from src.detector.bollinger import BollingerBandsIndicator  # noqa: F401
+from src.detector.rsi import RSIIndicator  # noqa: F401
+from src.detector.vwap import VWAPIndicator  # noqa: F401
 
 logger = setup_logging("anomaly-detector")
 

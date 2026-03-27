@@ -30,14 +30,18 @@ def send_alert(
         return False
 
     emoji = SEVERITY_EMOJI.get(severity, "\u26a0\ufe0f")
-    type_kr = "가격 급변" if anomaly_type == "price_spike" else "거래량 급증"
+    type_map = {
+        "price_spike": "가격 급변",
+        "volume_surge": "거래량 급증",
+    }
+    type_kr = type_map.get(anomaly_type, anomaly_type)
 
     message = (
         f"{emoji} *Market Incident Copilot*\n\n"
         f"**코인:** {coin_code}\n"
         f"**유형:** {type_kr}\n"
         f"**심각도:** {severity.upper()}\n"
-        f"**Z-Score:** {z_score:.2f}\n"
+        f"**Score:** {z_score:.2f}\n"
         f"**Incident ID:** `{incident_id}`"
     )
 
