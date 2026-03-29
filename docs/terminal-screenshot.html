@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f8f9fc; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .terminal { background: #1e1e2e; border-radius: 12px; overflow: hidden; max-width: 720px; margin: 0 auto; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .titlebar { background: #313244; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #f38ba8; }
+  .dot-yellow { background: #f9e2af; }
+  .dot-green { background: #a6e3a1; }
+  .titlebar-text { color: #6c7086; font-size: 13px; margin-left: 8px; font-family: monospace; }
+  .content { padding: 20px; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 13px; line-height: 1.8; }
+  .prompt { color: #89b4fa; }
+  .cmd { color: #cdd6f4; }
+  .comment { color: #6c7086; }
+  .success { color: #a6e3a1; }
+  .service { color: #f9e2af; }
+  .status { color: #89dceb; }
+  .created { color: #cba6f7; }
+  .separator { border-top: 1px solid #313244; margin: 12px 0; }
+  .table { width: 100%; }
+  .table-header { color: #6c7086; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .row { display: flex; padding: 3px 0; }
+  .col-check { width: 24px; text-align: center; }
+  .col-name { width: 200px; }
+  .col-status { flex: 1; }
+</style>
+</head>
+<body>
+<div class="terminal">
+  <div class="titlebar">
+    <div class="dot dot-red"></div>
+    <div class="dot dot-yellow"></div>
+    <div class="dot dot-green"></div>
+    <span class="titlebar-text">upbit_websocket</span>
+  </div>
+  <div class="content">
+    <div>
+      <span class="prompt">$ </span><span class="cmd">docker compose up -d</span>
+    </div>
+    <div style="margin-top: 12px;">
+      <span class="success">✔</span> <span class="service">kafka</span> <span class="status">Started</span> <span class="comment">(healthy)</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">timescaledb</span> <span class="status">Started</span> <span class="comment">(healthy)</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">producer</span> <span class="status">Started</span> <span class="comment">Upbit WebSocket → Kafka</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">consumer</span> <span class="status">Started</span> <span class="comment">Kafka → TimescaleDB</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">scheduler</span> <span class="status">Started</span> <span class="comment">앙상블 감지 + Multi-Agent + 알림</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">api</span> <span class="status">Started</span> <span class="comment">FastAPI + 리포트 뷰어 :8000</span>
+    </div>
+    <div>
+      <span class="success">✔</span> <span class="service">grafana</span> <span class="status">Started</span> <span class="comment">대시보드 :3001</span>
+    </div>
+
+    <div class="separator"></div>
+
+    <div>
+      <span class="success">7개 서비스 자동 기동 완료</span> <span class="comment">— 원클릭, 수동 설정 없음</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

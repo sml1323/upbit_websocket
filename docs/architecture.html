@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Incident Copilot - Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #f8f9fc; color: #1a1a2e; padding: 40px; }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Layers */
+  .layer { border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+  .layer-source { background: #eef1ff; border: 1px solid #d4daff; }
+  .layer-streaming { background: #dbeafe; border: 1px solid #bfdbfe; }
+  .layer-storage { background: #fef3c7; border: 1px solid #fde68a; }
+  .layer-detection { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .layer-agent { background: #ede9fe; border: 1px solid #ddd6fe; }
+  .layer-output { background: #fce7f3; border: 1px solid #fbcfe8; }
+
+  /* Labels */
+  .label { display: inline-block; padding: 3px 10px; border-radius: 6px;
+           font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .label-source { background: #6366f1; }
+  .label-streaming { background: #3b82f6; }
+  .label-storage { background: #f59e0b; }
+  .label-detection { background: #22c55e; }
+  .label-agent { background: #8b5cf6; }
+  .label-output { background: #ec4899; }
+
+  .layer-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: inline; margin-left: 8px; }
+
+  /* Cards grid */
+  .cards { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+          padding: 16px; flex: 1; min-width: 140px; text-align: center; }
+  .card-name { font-size: 15px; font-weight: 700; color: #4338ca; }
+  .card-desc { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+  /* Component tags */
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { display: inline-block; padding: 4px 12px; border-radius: 8px;
+         font-size: 13px; font-weight: 500; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+  .tag-green { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+  .tag-purple { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+  .tag-amber { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .tag-pink { background: #fce7f3; color: #9d174d; border-color: #fbcfe8; }
+
+  /* Arrow */
+  .arrow { text-align: center; padding: 8px 0; }
+  .arrow::after { content: '↓'; font-size: 24px; color: #94a3b8; }
+
+  /* Sub-sections */
+  .subsection { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+                padding: 16px; margin-top: 12px; }
+  .subsection-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .subsection-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+                    margin-right: 6px; vertical-align: middle; }
+  .dot-blue { background: #3b82f6; }
+  .dot-green { background: #22c55e; }
+  .dot-purple { background: #8b5cf6; }
+
+  /* Pattern box */
+  .pattern-row { display: flex; gap: 12px; margin-top: 12px; }
+  .pattern-box { flex: 1; background: #f8fafc; border: 1px dashed #cbd5e1;
+                 border-radius: 10px; padding: 14px; text-align: center; }
+  .pattern-label { font-size: 11px; color: #64748b; }
+  .pattern-name { font-size: 14px; font-weight: 700; color: #1e293b; margin: 4px 0; }
+
+  /* Parallel indicator */
+  .parallel { display: flex; gap: 12px; align-items: stretch; }
+  .parallel > .subsection { flex: 1; }
+  .parallel-label { text-align: center; font-size: 11px; color: #8b5cf6;
+                    font-weight: 600; letter-spacing: 1px; padding: 4px 0; }
+
+  /* Fan-in arrow */
+  .fan-in { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 8px 0; }
+  .fan-line { width: 120px; height: 1px; background: #a78bfa; }
+  .fan-text { font-size: 11px; color: #8b5cf6; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Data Source -->
+  <div class="layer layer-source">
+    <span class="label label-source">Data Source</span>
+    <span class="layer-title">Upbit WebSocket API</span>
+    <div class="cards" style="margin-top: 16px;">
+      <div class="card">
+        <div class="card-name">Ticker Stream</div>
+        <div class="card-desc">실시간 시세 (100+ 코인)</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Producer</div>
+        <div class="card-desc">WebSocket -> Kafka</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- Streaming -->
+  <div class="layer layer-streaming">
+    <span class="label label-streaming">Streaming</span>
+    <span class="layer-title">Apache Kafka (KRaft)</span>
+    <div class="cards" style="margin-top: 16px;">
+      <div class="card">
+        <div class="card-name">Topic: upbit-tickers</div>
+        <div class="card-desc">Producer/Consumer 디커플링</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Consumer</div>
+        <div class="card-desc">Batch INSERT (100건/1초)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- Storage -->
+  <div class="layer layer-storage">
+    <span class="label label-storage">Storage</span>
+    <span class="layer-title">TimescaleDB (PostgreSQL)</span>
+    <div class="cards" style="margin-top: 16px;">
+      <div class="card">
+        <div class="card-name">tickers</div>
+        <div class="card-desc">Hypertable (raw data)</div>
+      </div>
+      <div class="card">
+        <div class="card-name">agg_1min / agg_5min</div>
+        <div class="card-desc">Continuous Aggregates</div>
+      </div>
+      <div class="card">
+        <div class="card-name">incidents</div>
+        <div class="card-desc">Agent Reports + Scores</div>
+      </div>
+      <div class="card">
+        <div class="card-name">indicator_snapshots</div>
+        <div class="card-desc">Grafana 시각화용</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- Detection -->
+  <div class="layer layer-detection">
+    <span class="label label-detection">Detection</span>
+    <span class="layer-title">Ensemble Anomaly Detector</span>
+
+    <div class="subsection">
+      <span class="subsection-dot dot-green"></span>
+      <span class="subsection-title">IndicatorBase ABC + Registry Pattern</span>
+      <div class="tags">
+        <span class="tag tag-green">ZScoreIndicator (0.30)</span>
+        <span class="tag tag-green">BollingerBandsIndicator (0.25)</span>
+        <span class="tag tag-green">RSIIndicator (0.20)</span>
+        <span class="tag tag-green">VWAPIndicator (0.25)</span>
+      </div>
+    </div>
+
+    <div class="pattern-row">
+      <div class="pattern-box">
+        <div class="pattern-label">Scoring</div>
+        <div class="pattern-name">EnsembleScorer</div>
+        <div class="tags" style="justify-content: center;">
+          <span class="tag" style="font-size: 11px;">가중치 합 >= 0.5 = 이상</span>
+        </div>
+      </div>
+      <div class="pattern-box">
+        <div class="pattern-label">Pre-filter</div>
+        <div class="pattern-name">v_zscore SQL View</div>
+        <div class="tags" style="justify-content: center;">
+          <span class="tag" style="font-size: 11px;">|z| >= 2.0 인 코인만</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- Multi-Agent -->
+  <div class="layer layer-agent">
+    <span class="label label-agent">AI Agent</span>
+    <span class="layer-title">Multi-Agent DAG (LangGraph)</span>
+
+    <div class="parallel-label">fan-out: 병렬 실행</div>
+    <div class="parallel">
+      <div class="subsection">
+        <span class="subsection-dot dot-blue"></span>
+        <span class="subsection-title">Market Agent</span>
+        <div class="tags">
+          <span class="tag tag-purple">query_market_window</span>
+          <span class="tag tag-purple">GPT-4o-mini</span>
+        </div>
+        <div class="card-desc" style="margin-top: 8px;">OHLCV 데이터 조회 + 기술적 분석</div>
+      </div>
+      <div class="subsection">
+        <span class="subsection-dot dot-green"></span>
+        <span class="subsection-title">News Agent</span>
+        <div class="tags">
+          <span class="tag tag-purple">search_news (SerpAPI)</span>
+          <span class="tag tag-purple">GPT-4o-mini</span>
+        </div>
+        <div class="card-desc" style="margin-top: 8px;">뉴스 검색 + 연관성 분석</div>
+      </div>
+    </div>
+
+    <div class="fan-in">
+      <div class="fan-line"></div>
+      <div class="fan-text">fan-in</div>
+      <div class="fan-line"></div>
+    </div>
+
+    <div class="subsection">
+      <span class="subsection-dot dot-purple"></span>
+      <span class="subsection-title">Report Agent</span>
+      <div class="tags">
+        <span class="tag tag-purple">write_incident_report</span>
+        <span class="tag tag-purple">GPT-4o-mini</span>
+      </div>
+      <div class="card-desc" style="margin-top: 8px;">시장 + 뉴스 종합 리포트 작성 + 신뢰도 점수</div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <!-- Output -->
+  <div class="layer layer-output">
+    <span class="label label-output">Output</span>
+    <span class="layer-title">알림 + 모니터링</span>
+    <div class="cards" style="margin-top: 16px;">
+      <div class="card">
+        <div class="card-name">Telegram</div>
+        <div class="card-desc">Bot API 알림</div>
+      </div>
+      <div class="card">
+        <div class="card-name">KakaoTalk</div>
+        <div class="card-desc">나에게 보내기 + OAuth 자동 갱신</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Grafana</div>
+        <div class="card-desc">실시간 대시보드 (:3001)</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Report Viewer</div>
+        <div class="card-desc">Agent별 분석 결과 (:8000)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

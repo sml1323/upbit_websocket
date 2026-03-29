@@ -1,4 +1,4 @@
-# Market Incident Copilot
+# Coin Anomaly Agent
 
 Upbit 실시간 시세 데이터를 수집하고, 4개 지표 앙상블로 이상을 감지하고, Multi-Agent AI가 분석 리포트를 작성하는 시스템.
 
@@ -223,26 +223,36 @@ python3 -m pytest tests/ -v
 
 ### 3. 토큰 발급
 
-```bash
-# 브라우저에서 인가 코드 발급
-open "https://kauth.kakao.com/oauth/authorize?client_id={REST_API_KEY}&redirect_uri=https://localhost:3000/callback&response_type=code&scope=talk_message"
+**Step 1)** 브라우저에서 아래 URL을 열고 카카오 로그인 + 동의:
 
-# 리다이렉트 URL에서 code= 값 복사 후 토큰 발급
+```
+https://kauth.kakao.com/oauth/authorize?client_id={REST_API_KEY}&redirect_uri=https://localhost:3000/callback&response_type=code&scope=talk_message
+```
+
+**Step 2)** "사이트에 연결할 수 없음" 페이지가 뜨면 정상. **URL 바**에서 `code=` 뒤의 값을 복사:
+
+```
+https://localhost:3000/callback?code=여기가_인가코드
+```
+
+**Step 3)** 터미널에서 토큰 발급:
+
+```bash
 curl -X POST https://kauth.kakao.com/oauth/token \
   -d "grant_type=authorization_code" \
   -d "client_id={REST_API_KEY}" \
   -d "redirect_uri=https://localhost:3000/callback" \
-  -d "code={CODE}"
+  -d "code={위에서_복사한_인가코드}"
 ```
 
-### 4. 환경변수에 추가
+**Step 4)** 응답 JSON에서 `access_token`과 `refresh_token`을 복사하여 `.env`에 입력:
 
 ```env
 KAKAO_REST_API_KEY=your_key
-KAKAO_ACCESS_TOKEN=your_access_token
-KAKAO_REFRESH_TOKEN=your_refresh_token
+KAKAO_ACCESS_TOKEN=응답의_access_token_값
+KAKAO_REFRESH_TOKEN=응답의_refresh_token_값
 ```
 
 > [!TIP]
-> `access_token`은 6시간 만료되지만 시스템이 `refresh_token`으로 자동 갱신합니다.
-> `refresh_token`은 2개월 유효. 만료 시 위 과정을 다시 수행합니다.
+> `access_token`은 6시간마다 만료되지만, 시스템이 `refresh_token`으로 자동 갱신합니다.
+> `refresh_token`은 2개월 유효. 만료 시 Step 1부터 다시 수행합니다.

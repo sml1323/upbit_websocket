@@ -8,3 +8,14 @@ build/
 venv/
 *.log
 .pytest_cache/
+.gstack/
+docs/portfolio-draft.md
+docs/.anomaly-detection-rationale.md.swp
+docs/anomaly-detection-rationale.md
+
+# gstack / claude code
+.agents/
+.claude/
+.context/
+skills-lock.json
+~/.gstack/
