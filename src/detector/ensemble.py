@@ -127,14 +127,28 @@ class EnsembleScorer:
         return [self.score(code, ohlcv_all) for code in coin_codes]
 
 
+def _to_native(val):
+    """Convert numpy types to Python native for psycopg2."""
+    if val is None:
+        return None
+    if hasattr(val, 'item'):
+        return val.item()
+    return val
+
+
+def _clean_detail(detail: dict) -> dict:
+    """Convert all numpy values in a detail dict to native Python types."""
+    return {k: _to_native(v) for k, v in detail.items()}
+
+
 def save_incident(conn, result: EnsembleResult) -> str:
     """Save an ensemble anomaly to the incidents table."""
     firing_names = [s.indicator_name for s in result.signals if s.is_anomaly]
-    details = {s.indicator_name: s.detail for s in result.signals if s.ready}
+    details = {s.indicator_name: _clean_detail(s.detail) for s in result.signals if s.ready}
     z_score_val = None
     for s in result.signals:
         if s.indicator_name == "zscore" and s.ready:
-            z_score_val = s.value
+            z_score_val = _to_native(s.value)
             break
 
     query = """
@@ -154,9 +168,9 @@ def save_incident(conn, result: EnsembleResult) -> str:
             anomaly_type,
             result.severity,
             z_score_val,
-            result.ensemble_score,
+            _to_native(result.ensemble_score),
             firing_names,
-            json.dumps(details),
+            json.dumps(details, default=str),
         ))
         incident_id = str(cur.fetchone()[0])
     conn.commit()

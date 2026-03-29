@@ -72,6 +72,47 @@ services:
       - LOG_LEVEL=INFO
     restart: unless-stopped
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_NAME=upbit
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY:-}
+      - KAKAO_ACCESS_TOKEN=${KAKAO_ACCESS_TOKEN:-}
+      - KAKAO_REFRESH_TOKEN=${KAKAO_REFRESH_TOKEN:-}
+      - CRYPTOPANIC_API_KEY=${CRYPTOPANIC_API_KEY:-}
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_NAME=upbit
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana-oss:11.4.0
     ports:

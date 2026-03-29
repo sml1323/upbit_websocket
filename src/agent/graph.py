@@ -114,8 +114,31 @@ def analyze_anomaly(result: EnsembleResult, incident_id: str) -> str | None:
     try:
         app = build_multi_agent_graph()
         invoke_result = app.invoke(initial_state, {"recursion_limit": 10})
-        final_report = invoke_result.get("final_report", "")
 
+        # 각 Agent 응답을 구조화하여 DB에 저장
+        import json
+        import psycopg2
+        from src.config import get_db_dsn
+
+        agent_report = {
+            "market_analysis": invoke_result.get("market_analysis", ""),
+            "news_analysis": invoke_result.get("news_analysis", ""),
+            "final_report": invoke_result.get("final_report", ""),
+            "indicator_details": initial_state["indicator_details"],
+        }
+
+        conn = psycopg2.connect(get_db_dsn())
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE incidents SET agent_report = %s WHERE incident_id = %s",
+                    (json.dumps(agent_report, ensure_ascii=False), incident_id),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        final_report = invoke_result.get("final_report", "")
         logger.info("Multi-Agent 분석 완료: %s %s", result.coin_code, incident_id)
         return final_report if final_report else None
 
