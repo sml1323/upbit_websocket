@@ -45,7 +45,7 @@ def market_analyst_node(state: dict) -> dict:
     except Exception as e:
         logger.error("Market Agent 실패: %s", e)
         fallback = MarketEvidence(
-            claim=f"시장 데이터 분석 실패: {e}",
+            claim=f"[ERROR] 시장 데이터 분석 실패: {e}",
             evidence=[],
             confidence=0.0,
             missing_data=["전체 시장 데이터"],

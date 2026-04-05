@@ -45,7 +45,7 @@ def news_analyst_node(state: dict) -> dict:
     except Exception as e:
         logger.error("News Agent 실패: %s", e)
         fallback = NewsEvidence(
-            headlines=[],
+            headlines=[f"[ERROR] 뉴스 검색 실패: {e}"],
             sentiment="NEUTRAL",
             relevance_score=0.0,
             source_quality="unknown",

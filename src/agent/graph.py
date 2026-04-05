@@ -90,44 +90,65 @@ def _format_indicator_details(result: EnsembleResult) -> str:
     return "\n".join(lines)
 
 
-def analyze_anomaly(result: EnsembleResult, incident_id: str) -> str | None:
-    """이상 징후를 멀티 에이전트로 분석하고 리포트를 생성."""
+def analyze_anomaly(result, incident_id: str) -> str | None:
+    """이상 징후를 멀티 에이전트로 분석하고 리포트를 생성.
+
+    result: EnsembleResult (정상 경로) 또는 Anomaly (replay 경로) 둘 다 지원.
+    """
     if not OPENAI_API_KEY:
         logger.warning("OPENAI_API_KEY가 설정되지 않음. Agent 스킵.")
         return None
 
-    firing = [s.indicator_name for s in result.signals if s.is_anomaly]
-
-    initial_state: SupervisorState = {
-        "anomaly": {
-            "coin_code": result.coin_code,
-            "anomaly_type": "ensemble",
-            "ensemble_score": result.ensemble_score,
-            "severity": result.severity,
-            "firing_indicators": firing,
-        },
-        "incident_id": incident_id,
-        "indicator_details": _format_indicator_details(result),
-        "market_analysis": "",
-        "news_analysis": "",
-        "final_report": "",
-    }
+    # EnsembleResult vs legacy Anomaly 호환
+    if isinstance(result, EnsembleResult):
+        firing = [s.indicator_name for s in result.signals if s.is_anomaly]
+        initial_state: SupervisorState = {
+            "anomaly": {
+                "coin_code": result.coin_code,
+                "anomaly_type": "ensemble",
+                "ensemble_score": result.ensemble_score,
+                "severity": result.severity,
+                "firing_indicators": firing,
+            },
+            "incident_id": incident_id,
+            "indicator_details": _format_indicator_details(result),
+            "market_analysis": "",
+            "news_analysis": "",
+            "final_report": "",
+        }
+    else:
+        # legacy Anomaly (replay API 호환)
+        initial_state: SupervisorState = {
+            "anomaly": {
+                "coin_code": result.coin_code,
+                "anomaly_type": getattr(result, "anomaly_type", "unknown"),
+                "ensemble_score": 0.0,
+                "severity": getattr(result, "severity", "low"),
+                "firing_indicators": [getattr(result, "anomaly_type", "zscore")],
+            },
+            "incident_id": incident_id,
+            "indicator_details": f"z_score: {getattr(result, 'z_score', 0.0)}",
+            "market_analysis": "",
+            "news_analysis": "",
+            "final_report": "",
+        }
 
     try:
         app = build_multi_agent_graph()
         invoke_result = app.invoke(initial_state, {"recursion_limit": 10})
-
         final_report = invoke_result.get("final_report", "")
-
-        # 전체 에이전트 결과를 DB에 저장 (market + news + report)
-        _save_agent_report(incident_id, invoke_result)
-
-        logger.info("Multi-Agent 분석 완료: %s %s", result.coin_code, incident_id)
-        return final_report if final_report else None
-
     except Exception as e:
         logger.error("Multi-Agent 분석 실패: %s", e)
         return None
+
+    # DB 저장은 agent 실행과 분리 — 저장 실패해도 결과는 반환
+    try:
+        _save_agent_report(incident_id, invoke_result)
+    except Exception as e:
+        logger.error("Agent report 저장 실패 (결과는 유효): %s", e)
+
+    logger.info("Multi-Agent 분석 완료: %s %s", initial_state["anomaly"]["coin_code"], incident_id)
+    return final_report if final_report else None
 
 
 def _save_agent_report(incident_id: str, state: dict) -> None:
