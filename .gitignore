@@ -12,6 +12,7 @@ venv/
 docs/portfolio-draft.md
 docs/.anomaly-detection-rationale.md.swp
 docs/anomaly-detection-rationale.md
+*.pdf
 
 # gstack / claude code
 .agents/
