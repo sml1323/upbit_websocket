@@ -193,6 +193,70 @@ def _build_agent_section(icon, title, agent_name, content):
 </div>"""
 
 
+def _parse_json(raw: str) -> dict | None:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw) if isinstance(raw, str) else raw
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def _format_market(raw: str) -> str:
+    data = _parse_json(raw)
+    if not data:
+        return ""
+    claim = data.get("claim", "")
+    evidence = data.get("evidence", [])
+    confidence = data.get("confidence", 0)
+    missing = data.get("missing_data", [])
+    parts = [claim]
+    if evidence:
+        parts.append("\n근거:\n" + "\n".join(f"  • {e}" for e in evidence))
+    parts.append(f"\n신뢰도: {confidence}")
+    if missing:
+        parts.append("부족 데이터: " + ", ".join(missing))
+    return "\n".join(parts)
+
+
+def _format_news(raw: str) -> str:
+    data = _parse_json(raw)
+    if not data:
+        return ""
+    headlines = data.get("headlines", [])
+    sentiment = data.get("sentiment", "NEUTRAL")
+    relevance = data.get("relevance_score", 0)
+    quality = data.get("source_quality", "unknown")
+    parts = []
+    if headlines:
+        parts.append("관련 뉴스:\n" + "\n".join(f"  • {h}" for h in headlines))
+    else:
+        parts.append("관련 뉴스 없음")
+    parts.append(f"\n감성: {sentiment} | 관련성: {relevance} | 소스: {quality}")
+    return "\n".join(parts)
+
+
+def _format_report(raw: str) -> str:
+    data = _parse_json(raw)
+    if not data:
+        return raw or ""
+    summary = data.get("summary", "")
+    root_cause = data.get("root_cause", "")
+    action = data.get("recommended_action", "")
+    evidence = data.get("supporting_evidence", [])
+    alts = data.get("alternative_hypotheses", [])
+    parts = [summary]
+    if root_cause:
+        parts.append(f"\n원인 추정: {root_cause}")
+    if evidence:
+        parts.append("근거:\n" + "\n".join(f"  • {e}" for e in evidence))
+    if alts:
+        parts.append("대안 가설:\n" + "\n".join(f"  • {a}" for a in alts))
+    if action:
+        parts.append(f"\n권장 조치: {action}")
+    return "\n".join(parts)
+
+
 @app.get("/reports", response_class=HTMLResponse)
 def report_list(limit: int = 30):
     """HTML 리포트 목록"""
@@ -264,31 +328,31 @@ def report_detail(incident_id: str):
     agent_report = row.get("agent_report") or {}
     indicator_details = row.get("indicator_details") or {}
 
-    # agent_report 구조: {market_analysis, news_analysis, final_report, indicator_details}
+    # agent_report 구조: {market_analysis, news_analysis, final_report}
     # 이전 형식: {text: "..."} 호환
     if "market_analysis" in agent_report:
-        market = agent_report.get("market_analysis", "")
-        news = agent_report.get("news_analysis", "")
-        report = agent_report.get("final_report", "")
+        market_raw = agent_report.get("market_analysis", "")
+        news_raw = agent_report.get("news_analysis", "")
+        report_raw = agent_report.get("final_report", "")
         if not indicator_details and "indicator_details" in agent_report:
             indicator_details = agent_report["indicator_details"]
     elif "text" in agent_report:
-        market = ""
-        news = ""
-        report = agent_report["text"]
+        market_raw = ""
+        news_raw = ""
+        report_raw = agent_report["text"]
     else:
-        market = ""
-        news = ""
-        report = ""
+        market_raw = ""
+        news_raw = ""
+        report_raw = ""
 
     indicators_section = _build_indicator_section(
         indicator_details if isinstance(indicator_details, dict) else {}
     )
-    market_section = _build_agent_section("📈", "시장 분석", "Market Agent", market)
-    news_section = _build_agent_section("📰", "뉴스 분석", "News Agent", news)
-    report_section = _build_agent_section("📋", "최종 리포트", "Report Agent", report)
+    market_section = _build_agent_section("📈", "시장 분석", "Market Agent", _format_market(market_raw))
+    news_section = _build_agent_section("📰", "뉴스 분석", "News Agent", _format_news(news_raw))
+    report_section = _build_agent_section("📋", "최종 리포트", "Report Agent", _format_report(report_raw))
 
-    if not market and not news and not report:
+    if not market_raw and not news_raw and not report_raw:
         report_section = '<div class="no-report">Agent 분석이 아직 완료되지 않았습니다.</div>'
 
     html = (REPORT_DETAIL_HTML

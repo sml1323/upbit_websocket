@@ -20,23 +20,25 @@ Architecture:
                               END
 """
 
+import json
 import os
 from typing import TypedDict
 
+import psycopg2
 from langgraph.graph import StateGraph, END
 
 from src.agent.market_agent import market_analyst_node
 from src.agent.news_agent import news_analyst_node
 from src.agent.report_agent import report_writer_node
 from src.detector.base import EnsembleResult
-from src.config import setup_logging
+from src.config import get_db_dsn, setup_logging
 
 logger = setup_logging("agent-graph")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # 뉴스 조회가 필요한 지표 (가격/거래량 급변 → 외부 촉매 가능성)
-NEWS_REQUIRED_INDICATORS = {"zscore", "bollinger"}
+NEWS_REQUIRED_INDICATORS = {"zscore", "bollinger_bands"}
 
 
 class SupervisorState(TypedDict):
@@ -116,9 +118,47 @@ def analyze_anomaly(result: EnsembleResult, incident_id: str) -> str | None:
         invoke_result = app.invoke(initial_state, {"recursion_limit": 10})
 
         final_report = invoke_result.get("final_report", "")
+
+        # 전체 에이전트 결과를 DB에 저장 (market + news + report)
+        _save_agent_report(incident_id, invoke_result)
+
         logger.info("Multi-Agent 분석 완료: %s %s", result.coin_code, incident_id)
         return final_report if final_report else None
 
     except Exception as e:
         logger.error("Multi-Agent 분석 실패: %s", e)
         return None
+
+
+def _save_agent_report(incident_id: str, state: dict) -> None:
+    """에이전트 전체 결과를 incidents.agent_report에 저장."""
+    agent_report = {
+        "market_analysis": state.get("market_analysis", ""),
+        "news_analysis": state.get("news_analysis", ""),
+        "final_report": state.get("final_report", ""),
+    }
+
+    # final_report에서 confidence 추출
+    confidence = 0.0
+    try:
+        report_data = json.loads(state.get("final_report", "{}"))
+        confidence = float(report_data.get("confidence", 0.0))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+
+    conn = psycopg2.connect(get_db_dsn())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE incidents
+                   SET agent_report = %s,
+                       confidence_score = %s,
+                       status = 'analyzed'
+                   WHERE incident_id = %s::uuid""",
+                (json.dumps(agent_report, ensure_ascii=False), confidence, incident_id),
+            )
+        conn.commit()
+    except Exception as e:
+        logger.error("Agent report 저장 실패: %s", e)
+    finally:
+        conn.close()
