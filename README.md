@@ -1,8 +1,10 @@
 # Coin Anomaly Agent
 
-Upbit 실시간 시세 데이터를 수집하고, 4개 지표 앙상블로 이상을 감지하고, Multi-Agent AI가 분석 리포트를 작성하는 시스템.
-
-`docker compose up` 한 번이면 데이터 수집부터 이상 감지, AI 분석, KakaoTalk 알림까지 전부 자동으로 동작합니다.
+> **문제**: 암호화폐 시장에서 가격/거래량 급변이 발생해도, 원인 파악에 시간이 걸려 대응이 늦어진다.
+>
+> **해결**: 실시간 WebSocket 파이프라인 + 4개 지표 앙상블 이상감지 + Multi-Agent AI가 자동으로 원인을 분석한다.
+>
+> **결과**: 이상 감지부터 시장 분석, 뉴스 검색, 종합 리포트 생성, 알림까지 5분 주기로 자동 동작.
 
 ![Grafana Dashboard](docs/images/grafana-dashboard.png)
 
@@ -74,7 +76,6 @@ Upbit WebSocket
              + VWAP)                /incidents
                     |
                     v (이상 감지 시)
-            +------------------+
             +-------------------+
             | Multi-Agent DAG   |
             | (조건부 라우팅)    |
@@ -98,7 +99,7 @@ LangGraph 기반 Supervisor + Sub-Agent DAG — **Typed Evidence 패턴**:
 
 - **Market Agent**: TimescaleDB OHLCV 조회 → DK-CoT 프롬프트 → `MarketEvidence` JSON 반환
 - **News Agent**: CryptoPanic/SerpAPI 뉴스 검색 → `NewsEvidence` JSON 반환
-- **Report Agent**: upstream evidence 종합 → `IncidentAssessment` JSON + DB 저장
+- **Report Agent**: upstream evidence 종합 → `IncidentAssessment` JSON 반환 (DB 저장은 Supervisor가 수행)
 
 각 에이전트는 자유 형식 텍스트가 아닌 **Pydantic 스키마로 검증된 구조화된 JSON**을 반환합니다.
 
@@ -130,15 +131,11 @@ cp .env.example .env
 
 # 2. 전체 시스템 기동
 docker compose up -d
-
-# 3. 확인
-open http://localhost:3001   # Grafana (admin/admin)
-open http://localhost:8000/reports  # 리포트 뷰어
 ```
 
 > [!NOTE]
-> `docker compose up` 한 번이면 Kafka, TimescaleDB, Producer, Consumer, Scheduler, API, Grafana 전부 기동됩니다.
-> Scheduler가 5분마다 자동으로 이상 감지 -> AI 분석 -> 알림을 수행합니다.
+> Kafka, TimescaleDB, Producer, Consumer, Scheduler, API, Grafana가 한 번에 기동됩니다.
+> Scheduler가 5분마다 자동으로 이상 감지 → AI 분석 → 알림을 수행합니다.
 
 ## Project Structure
 
@@ -201,23 +198,26 @@ src/
 ```bash
 pip install -r requirements.txt
 python3 -m pytest tests/ -v
-# 108 passed
+# 110 passed
 ```
 
 ## Environment Variables
 
 `cp .env.example .env` 후 필요한 값을 입력하세요.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENAI_API_KEY` | Yes | GPT-4o-mini API 키 (Agent 분석용) |
-| `SERPAPI_API_KEY` | No | 뉴스 검색 API (월 100회 무료) |
-| `CRYPTOPANIC_API_KEY` | No | 크립토 뉴스 API (무료 tier) |
-| `TELEGRAM_BOT_TOKEN` | No | Telegram 봇 토큰 |
-| `TELEGRAM_CHAT_ID` | No | Telegram 채팅 ID |
-| `KAKAO_REST_API_KEY` | No | Kakao Developers REST API 키 |
-| `KAKAO_ACCESS_TOKEN` | No | Kakao OAuth access token |
-| `KAKAO_REFRESH_TOKEN` | No | Kakao OAuth refresh token |
+> [!CAUTION]
+> `.env` 파일은 절대 커밋하지 마세요 (`.gitignore`에 이미 포함). PR이나 이슈에 토큰을 올리지 마세요.
+
+| Variable | Required | Description | 설정 시 활성화 |
+|----------|----------|-------------|----------------|
+| `OPENAI_API_KEY` | Yes | GPT-4o-mini API 키 | Multi-Agent AI 분석 |
+| `SERPAPI_API_KEY` | No | 뉴스 검색 API (월 100회 무료) | News Agent 뉴스 검색 |
+| `CRYPTOPANIC_API_KEY` | No | 크립토 뉴스 API (무료 tier) | News Agent 크립토 전문 뉴스 |
+| `TELEGRAM_BOT_TOKEN` | No | Telegram 봇 토큰 | Telegram 알림 |
+| `TELEGRAM_CHAT_ID` | No | Telegram 채팅 ID | Telegram 알림 |
+| `KAKAO_REST_API_KEY` | No | Kakao Developers REST API 키 | KakaoTalk 알림 |
+| `KAKAO_ACCESS_TOKEN` | No | Kakao OAuth access token | KakaoTalk 알림 |
+| `KAKAO_REFRESH_TOKEN` | No | Kakao OAuth refresh token | KakaoTalk 토큰 자동 갱신 |
 
 ## KakaoTalk 알림 설정
 
@@ -268,3 +268,7 @@ KAKAO_REFRESH_TOKEN=응답의_refresh_token_값
 > [!TIP]
 > `access_token`은 6시간마다 만료되지만, 시스템이 `refresh_token`으로 자동 갱신합니다.
 > `refresh_token`은 2개월 유효. 만료 시 Step 1부터 다시 수행합니다.
+
+> [!WARNING]
+> 토큰은 반드시 `.env` 파일에만 보관하세요. 코드, 커밋 메시지, PR, 이슈에 토큰을 노출하지 마세요.
+> 토큰이 유출된 경우 [Kakao Developers](https://developers.kakao.com/) > 내 애플리케이션 > 앱 키에서 즉시 재발급하세요.
