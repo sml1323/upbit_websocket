@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    color: #222;
+    font-family: -apple-system, 'Pretendard', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .container {
+    width: 780px;
+    background: #f8f9fb;
+    border: 1px solid #e0e3ea;
+    border-radius: 12px;
+    padding: 28px 32px;
+  }
+  .title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2962ff;
+    margin-bottom: 20px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 12px;
+    border-bottom: 2px solid #e0e3ea;
+  }
+  td {
+    font-size: 13px;
+    padding: 12px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  .indicator-name { font-weight: 700; color: #222; }
+  .method { color: #888; font-size: 12px; }
+  .weight-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-bg {
+    width: 80px;
+    height: 6px;
+    background: #e0e3ea;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-fill.w30 { width: 100%; background: #43a047; }
+  .bar-fill.w25 { width: 83%; background: #1e88e5; }
+  .bar-fill.w20 { width: 67%; background: #fb8c00; }
+  .weight-num { font-size: 13px; font-weight: 700; color: #333; min-width: 32px; }
+  .condition {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 12px;
+    color: #7b1fa2;
+    background: #f3e5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e1bee7;
+  }
+  .footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e3ea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-left { display: flex; align-items: center; gap: 12px; }
+  .threshold-box {
+    background: #e53935;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+  .threshold-desc { font-size: 12px; color: #888; }
+  .pattern-box {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: #1565c0;
+  }
+  .pattern-box span { color: #888; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">Ensemble Anomaly Detection</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Indicator</th>
+        <th>Method</th>
+        <th>Weight</th>
+        <th>Anomaly Condition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="indicator-name">Z-Score</td>
+        <td class="method">24h rolling mean/std</td>
+        <td>
+          <div class="weight-bar">
+            <span class="weight-num">0.30</span>
+            <div class="bar-bg"><div class="bar-fill w30"></div></div>
+          </div>
+        </td>
+        <td><span class="condition">|z| &ge; 3.0</span></td>
+      </tr>
+      <tr>
+        <td class="indicator-name">Bollinger Bands</td>
+        <td class="method">MA(60) &plusmn; 2&sigma;</td>
+        <td>
+          <div class="weight-bar">
+            <span class="weight-num">0.25</span>
+            <div class="bar-bg"><div class="bar-fill w25"></div></div>
+          </div>
+        </td>
+        <td><span class="condition">%B &gt; 1.0 or &lt; 0.0</span></td>
+      </tr>
+      <tr>
+        <td class="indicator-name">RSI</td>
+        <td class="method">60-period gain/loss</td>
+        <td>
+          <div class="weight-bar">
+            <span class="weight-num">0.20</span>
+            <div class="bar-bg"><div class="bar-fill w20"></div></div>
+          </div>
+        </td>
+        <td><span class="condition">RSI &gt; 75 or &lt; 25</span></td>
+      </tr>
+      <tr>
+        <td class="indicator-name">VWAP</td>
+        <td class="method">volume-weighted avg</td>
+        <td>
+          <div class="weight-bar">
+            <span class="weight-num">0.25</span>
+            <div class="bar-bg"><div class="bar-fill w25"></div></div>
+          </div>
+        </td>
+        <td><span class="condition">deviation &gt; 2%</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <div class="footer-left">
+      <div class="threshold-box">Threshold &ge; 0.5</div>
+      <div class="threshold-desc">가중치 합이 0.5 이상이면 이상 판정</div>
+    </div>
+    <div class="pattern-box">
+      IndicatorBase ABC + Registry Pattern <span>| 새 지표 추가 시 기존 코드 수정 0</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

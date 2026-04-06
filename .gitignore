@@ -14,6 +14,10 @@ docs/.anomaly-detection-rationale.md.swp
 docs/anomaly-detection-rationale.md
 *.pdf
 
+# 개인 파일
+TODOS.md
+study/
+
 # gstack / claude code
 .agents/
 .claude/

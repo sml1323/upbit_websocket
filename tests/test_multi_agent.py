@@ -103,13 +103,11 @@ class TestNewsAnalystNode:
 
 
 class TestReportWriterNode:
-    @patch("src.agent.report_agent.write_incident_report")
     @patch("src.agent.report_agent.ChatOpenAI")
-    def test_success(self, mock_llm_cls, mock_tool):
+    def test_success(self, mock_llm_cls):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value = MagicMock(content=MOCK_REPORT_JSON)
         mock_llm_cls.return_value = mock_llm
-        mock_tool.invoke.return_value = "저장 완료"
 
         state = _base_state()
         state["market_analysis"] = MOCK_MARKET_JSON
@@ -120,15 +118,12 @@ class TestReportWriterNode:
         assessment = IncidentAssessment.model_validate_json(result["final_report"])
         assert assessment.confidence == 0.8
         assert assessment.recommended_action == "ALERT"
-        mock_tool.invoke.assert_called_once()
 
-    @patch("src.agent.report_agent.write_incident_report")
     @patch("src.agent.report_agent.ChatOpenAI")
-    def test_with_error_inputs(self, mock_llm_cls, mock_tool):
+    def test_with_error_inputs(self, mock_llm_cls):
         mock_llm = MagicMock()
         mock_llm.invoke.return_value = MagicMock(content=MOCK_REPORT_JSON)
         mock_llm_cls.return_value = mock_llm
-        mock_tool.invoke.return_value = "저장 완료"
 
         state = _base_state()
         state["market_analysis"] = "[ERROR] 시장 분석 실패"

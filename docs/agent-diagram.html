@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    color: #222;
+    font-family: -apple-system, 'Pretendard', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .container { width: 820px; }
+
+  .routing-section {
+    background: #f8f9fb;
+    border: 1px solid #e0e3ea;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+  }
+  .routing-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2962ff;
+    margin-bottom: 20px;
+  }
+  .routing-flow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .routing-start {
+    background: #e53935;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .arrow { color: #2962ff; font-size: 22px; flex-shrink: 0; }
+  .decision-box {
+    background: #fff;
+    border: 2px solid #f9a825;
+    border-radius: 8px;
+    padding: 14px 20px;
+    min-width: 200px;
+  }
+  .decision-label {
+    font-size: 11px;
+    color: #f57f17;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .decision-q { font-size: 13px; color: #333; font-weight: 600; }
+  .branches { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .branch { display: flex; align-items: center; gap: 10px; }
+  .branch-label { font-size: 12px; width: 36px; text-align: right; font-weight: 700; }
+  .branch-label.yes { color: #2e7d32; }
+  .branch-label.no { color: #c62828; }
+  .agent-chip {
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    border: 1px solid #c8e6c9;
+  }
+  .agent-chip.news {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border-color: #bbdefb;
+  }
+  .plus { color: #999; font-size: 14px; font-weight: 700; }
+  .fanin-line { width: 2px; height: 20px; background: #2962ff; margin: 0 auto; }
+  .report-box {
+    background: #ede7f6;
+    color: #4a148c;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 0 auto;
+    width: fit-content;
+    border: 1px solid #d1c4e9;
+  }
+  .report-sub { font-size: 11px; font-weight: 400; color: #7b1fa2; margin-top: 2px; }
+
+  .bottom-row { display: flex; gap: 20px; }
+  .info-box {
+    flex: 1;
+    background: #f8f9fb;
+    border: 1px solid #e0e3ea;
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+  .info-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .badge-green { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+  .badge-blue { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+  .info-desc { font-size: 12px; color: #777; margin-bottom: 14px; line-height: 1.5; }
+
+  .code-block {
+    background: #f0f2f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .code-block .key { color: #1565c0; }
+  .code-block .str { color: #2e7d32; }
+  .code-block .num { color: #e65100; }
+  .code-block .bracket { color: #555; }
+  .code-block .comma { color: #999; }
+
+  .prompt-list { list-style: none; padding: 0; }
+  .prompt-list li {
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .prompt-list li:last-child { border-bottom: none; }
+  .step-num {
+    background: #e3f2fd;
+    color: #0d47a1;
+    font-size: 11px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .prompt-text { color: #333; font-size: 12.5px; font-weight: 600; }
+  .prompt-detail { color: #999; font-size: 11px; }
+  .json-force {
+    margin-top: 12px;
+    background: #e3f2fd;
+    border: 1px dashed #2962ff;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 11px;
+    color: #1565c0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="routing-section">
+    <div class="routing-title">Conditional Routing</div>
+    <div class="routing-flow">
+      <div class="routing-start">Anomaly<br>Detected</div>
+      <div class="arrow">&rarr;</div>
+      <div class="decision-box">
+        <div class="decision-label">ROUTING FUNCTION</div>
+        <div class="decision-q">firing_indicators에<br>zscore / bollinger 포함?</div>
+      </div>
+      <div class="arrow">&rarr;</div>
+      <div class="branches">
+        <div class="branch">
+          <span class="branch-label yes">Yes</span>
+          <span class="agent-chip">Market Agent</span>
+          <span class="plus">+</span>
+          <span class="agent-chip news">News Agent</span>
+          <span style="color:#999; font-size:11px; margin-left:4px">fan-out 병렬</span>
+        </div>
+        <div class="branch">
+          <span class="branch-label no">No</span>
+          <span class="agent-chip">Market Agent</span>
+          <span style="color:#999; font-size:11px; margin-left:4px">단독 실행</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:16px;">
+      <div class="fanin-line"></div>
+      <div style="color:#2962ff; font-size:11px; margin:4px 0;">fan-in</div>
+      <div class="report-box">
+        Report Agent
+        <div class="report-sub">IncidentAssessment JSON 생성 + DB 저장</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="info-box">
+      <div class="info-title">
+        Typed Evidence
+        <span class="badge badge-green">Pydantic</span>
+      </div>
+      <div class="info-desc">에이전트 출력을 구조화된 JSON 스키마로 강제.<br>자유 텍스트 대신 검증 가능한 계약(contract).</div>
+      <div class="code-block">
+        <span class="bracket">{</span><br>
+        &nbsp;&nbsp;<span class="key">"claim"</span><span class="comma">:</span> <span class="str">"BTC 30분간 5% 급등"</span><span class="comma">,</span><br>
+        &nbsp;&nbsp;<span class="key">"evidence"</span><span class="comma">:</span> <span class="bracket">[</span><span class="str">"거래량 3배 증가"</span><span class="bracket">]</span><span class="comma">,</span><br>
+        &nbsp;&nbsp;<span class="key">"confidence"</span><span class="comma">:</span> <span class="num">0.85</span><span class="comma">,</span><br>
+        &nbsp;&nbsp;<span class="key">"missing_data"</span><span class="comma">:</span> <span class="bracket">[]</span><br>
+        <span class="bracket">}</span>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-title">
+        DK-CoT Prompt
+        <span class="badge badge-blue">Domain Knowledge</span>
+      </div>
+      <div class="info-desc">업비트 특화 분석 프레임워크를 프롬프트에 주입.<br>LLM이 도메인 전문가처럼 단계별 분석 수행.</div>
+      <ul class="prompt-list">
+        <li><span class="step-num">1</span><span class="prompt-text">Volume Context</span><span class="prompt-detail">&nbsp;거래량 비교</span></li>
+        <li><span class="step-num">2</span><span class="prompt-text">Price Action</span><span class="prompt-detail">&nbsp;가격-거래량 방향</span></li>
+        <li><span class="step-num">3</span><span class="prompt-text">Support / Resistance</span><span class="prompt-detail">&nbsp;지지/저항</span></li>
+        <li><span class="step-num">4</span><span class="prompt-text">Trend</span><span class="prompt-detail">&nbsp;상승/하락/횡보</span></li>
+      </ul>
+      <div class="json-force">JSON 출력 강제 &rarr; Pydantic 스키마 자동 검증</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -59,6 +59,7 @@ def run_cycle():
 
         # Step 2: ensemble scoring
         results = _scorer.score_batch(coin_codes, conn)
+        logger.info("Ensemble 스코어링 완료: %d개 코인", len(results))
 
         # Step 3: save snapshots for Grafana (all results)
         save_snapshots(conn, results)
@@ -66,7 +67,7 @@ def run_cycle():
         # Step 4: process anomalies
         anomalies = [r for r in results if r.is_anomaly]
         if not anomalies:
-            logger.debug("Ensemble 판정: 이상 없음")
+            logger.info("Ensemble 판정: 이상 없음 — 사이클 완료")
             return
 
         logger.info("%d건 이상 징후 감지 (ensemble)", len(anomalies))
