@@ -1,4 +1,4 @@
-"""Market Analyst Agent — 시장 데이터 조회 + 기술적 분석."""
+"""Market analysis node — 시장 데이터 조회 + 기술적 분석."""
 
 import os
 
@@ -39,11 +39,11 @@ def market_analyst_node(state: dict) -> dict:
 
         # JSON 파싱 + 스키마 검증
         evidence = MarketEvidence.model_validate_json(response.content)
-        logger.info("Market Agent 분석 완료: %s (confidence=%.2f)", coin_code, evidence.confidence)
+        logger.info("Market node 분석 완료: %s (confidence=%.2f)", coin_code, evidence.confidence)
         return {"market_analysis": evidence.model_dump_json(ensure_ascii=False)}
 
     except Exception as e:
-        logger.error("Market Agent 실패: %s", e)
+        logger.error("Market node 실패: %s", e)
         fallback = MarketEvidence(
             claim=f"[ERROR] 시장 데이터 분석 실패: {e}",
             evidence=[],

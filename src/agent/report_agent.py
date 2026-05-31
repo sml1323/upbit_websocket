@@ -1,4 +1,4 @@
-"""Report Writer Agent — 시장분석 + 뉴스분석 종합 → 최종 리포트."""
+"""Report synthesis node — 시장분석 + 뉴스분석 종합 → 최종 리포트."""
 
 import os
 
@@ -44,11 +44,11 @@ def report_writer_node(state: dict) -> dict:
         # JSON 파싱 + 스키마 검증
         assessment = IncidentAssessment.model_validate_json(response.content)
 
-        logger.info("Report Agent 완료: %s %s (confidence=%.2f)", coin_code, incident_id, assessment.confidence)
+        logger.info("Report node 완료: %s %s (confidence=%.2f)", coin_code, incident_id, assessment.confidence)
         return {"final_report": assessment.model_dump_json(ensure_ascii=False)}
 
     except Exception as e:
-        logger.error("Report Agent 실패: %s", e)
+        logger.error("Report node 실패: %s", e)
         fallback = IncidentAssessment(
             root_cause=f"[ERROR] 리포트 작성 실패: {e}",
             confidence=0.0,

@@ -1,4 +1,4 @@
-"""News Analyst Agent — 뉴스 검색 + 연관성 분석."""
+"""News analysis node — 뉴스 검색 + 연관성 분석."""
 
 import os
 
@@ -39,11 +39,11 @@ def news_analyst_node(state: dict) -> dict:
 
         # JSON 파싱 + 스키마 검증
         evidence = NewsEvidence.model_validate_json(response.content)
-        logger.info("News Agent 분석 완료: %s (sentiment=%s)", coin_code, evidence.sentiment)
+        logger.info("News node 분석 완료: %s (sentiment=%s)", coin_code, evidence.sentiment)
         return {"news_analysis": evidence.model_dump_json(ensure_ascii=False)}
 
     except Exception as e:
-        logger.error("News Agent 실패: %s", e)
+        logger.error("News node 실패: %s", e)
         fallback = NewsEvidence(
             headlines=[f"[ERROR] 뉴스 검색 실패: {e}"],
             sentiment="NEUTRAL",

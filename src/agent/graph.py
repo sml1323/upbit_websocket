@@ -1,4 +1,4 @@
-"""Multi-Agent DAG — Supervisor + Sub-Agents.
+"""Structured LLM analysis DAG.
 
 Architecture:
   analyze_anomaly()
@@ -51,15 +51,15 @@ class SupervisorState(TypedDict):
 
 
 def route_by_anomaly_type(state: SupervisorState) -> list[str]:
-    """이상치 유형에 따라 실행할 에이전트를 결정."""
+    """이상치 유형에 따라 실행할 분석 노드를 결정."""
     firing = set(state["anomaly"].get("firing_indicators", []))
     if firing & NEWS_REQUIRED_INDICATORS:
         return ["market_analyst", "news_analyst"]
     return ["market_analyst"]
 
 
-def build_multi_agent_graph():
-    """Supervisor DAG: 조건부 fan-out → report fan-in."""
+def build_analysis_workflow():
+    """LangGraph DAG: 조건부 fan-out → report fan-in."""
     graph = StateGraph(SupervisorState)
 
     graph.add_node("market_analyst", market_analyst_node)
@@ -69,7 +69,7 @@ def build_multi_agent_graph():
     # 조건부 fan-out: 이상치 유형에 따라 news를 실행할지 결정
     graph.add_conditional_edges("__start__", route_by_anomaly_type)
 
-    # fan-in: 완료된 에이전트 → report_writer
+    # fan-in: 완료된 분석 노드 → report_writer
     graph.add_edge("market_analyst", "report_writer")
     graph.add_edge("news_analyst", "report_writer")
     graph.add_edge("report_writer", END)
@@ -78,7 +78,7 @@ def build_multi_agent_graph():
 
 
 def _format_indicator_details(result: EnsembleResult) -> str:
-    """Format indicator signals for agent context."""
+    """Format indicator signals for workflow context."""
     lines = []
     for signal in result.signals:
         if not signal.ready:
@@ -96,7 +96,7 @@ def analyze_anomaly(result, incident_id: str) -> str | None:
     result: EnsembleResult (정상 경로) 또는 Anomaly (replay 경로) 둘 다 지원.
     """
     if not OPENAI_API_KEY:
-        logger.warning("OPENAI_API_KEY가 설정되지 않음. Agent 스킵.")
+        logger.warning("OPENAI_API_KEY가 설정되지 않음. LLM 분석 스킵.")
         return None
 
     # EnsembleResult vs legacy Anomaly 호환
@@ -134,25 +134,25 @@ def analyze_anomaly(result, incident_id: str) -> str | None:
         }
 
     try:
-        app = build_multi_agent_graph()
+        app = build_analysis_workflow()
         invoke_result = app.invoke(initial_state, {"recursion_limit": 10})
         final_report = invoke_result.get("final_report", "")
     except Exception as e:
-        logger.error("Multi-Agent 분석 실패: %s", e)
+        logger.error("LLM 워크플로우 분석 실패: %s", e)
         return None
 
-    # DB 저장은 agent 실행과 분리 — 저장 실패해도 결과는 반환
+    # DB 저장은 LLM 워크플로우 실행과 분리 — 저장 실패해도 결과는 반환
     try:
         _save_agent_report(incident_id, invoke_result)
     except Exception as e:
-        logger.error("Agent report 저장 실패 (결과는 유효): %s", e)
+        logger.error("분석 리포트 저장 실패 (결과는 유효): %s", e)
 
-    logger.info("Multi-Agent 분석 완료: %s %s", initial_state["anomaly"]["coin_code"], incident_id)
+    logger.info("LLM 워크플로우 분석 완료: %s %s", initial_state["anomaly"]["coin_code"], incident_id)
     return final_report if final_report else None
 
 
 def _save_agent_report(incident_id: str, state: dict) -> None:
-    """에이전트 전체 결과를 incidents.agent_report에 저장."""
+    """분석 전체 결과를 incidents.agent_report에 저장."""
     agent_report = {
         "market_analysis": state.get("market_analysis", ""),
         "news_analysis": state.get("news_analysis", ""),
@@ -180,6 +180,6 @@ def _save_agent_report(incident_id: str, state: dict) -> None:
             )
         conn.commit()
     except Exception as e:
-        logger.error("Agent report 저장 실패: %s", e)
+        logger.error("분석 리포트 저장 실패: %s", e)
     finally:
         conn.close()

@@ -2,7 +2,7 @@
 
 > **문제**: 암호화폐 시장에서 가격/거래량 급변이 발생해도, 원인 파악에 시간이 걸려 대응이 늦어진다.
 >
-> **해결**: 실시간 WebSocket 파이프라인 + 4개 지표 앙상블 이상감지 + Multi-Agent AI가 자동으로 원인을 분석한다.
+> **해결**: 실시간 WebSocket 파이프라인 + 4개 지표 앙상블 이상감지 + 구조화 LLM 워크플로우가 자동으로 원인을 분석한다.
 >
 > **결과**: 이상 감지부터 시장 분석, 뉴스 검색, 종합 리포트 생성, 알림까지 5분 주기로 자동 동작.
 
@@ -14,10 +14,10 @@
 |---|---------|-------------|
 | **Pipeline** | 실시간 데이터 수집 | Upbit WebSocket -> Kafka -> TimescaleDB |
 | **Detection** | 앙상블 이상 감지 | Z-Score, Bollinger Bands, RSI, VWAP 4개 지표 가중치 투표 |
-| **AI** | Multi-Agent 분석 | Typed Evidence 패턴 — Pydantic 스키마 + DK-CoT 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
+| **AI** | 구조화 LLM 분석 | Typed Evidence 패턴 — Pydantic 스키마 + DK-CoT 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
 | **Alert** | 멀티 채널 알림 | Telegram + KakaoTalk 동시 지원 |
 | **Dashboard** | Grafana 모니터링 | 거래대금 Top 10, 실시간 가격, Z-Score, Incidents |
-| **Report** | 리포트 뷰어 | 각 Agent별 응답을 구조화된 HTML로 조회 |
+| **Report** | 리포트 뷰어 | 각 분석 노드별 응답을 구조화된 HTML로 조회 |
 | **API** | REST API | FastAPI 기반 incidents CRUD + Replay mode |
 
 ## Screenshots
@@ -33,7 +33,7 @@
 </td>
 <td width="50%">
 
-**리포트 상세** (Agent별 분석 결과)
+**리포트 상세** (노드별 분석 결과)
 
 ![Report Detail](docs/images/report-detail.png)
 
@@ -77,14 +77,14 @@ Upbit WebSocket
                     |
                     v (이상 감지 시)
             +-------------------+
-            | Multi-Agent DAG   |
+            | LLM Workflow DAG  |
             | (조건부 라우팅)    |
             |                   |
             | Market    News    |  <- 조건부 병렬
-            | Agent     Agent   |     (zscore/BB → 둘 다)
+            | Node      Node    |     (zscore/BB → 둘 다)
             | (Evidence) (Evidence)   (rsi/vwap → market만)
             |        \  /       |
-            |    Report Agent   |  <- fan-in 종합
+            |   Report Node     |  <- fan-in 종합
             |  (IncidentAssessment)
             +--------+----------+
                      |
@@ -93,15 +93,15 @@ Upbit WebSocket
          [ Telegram ]  [ KakaoTalk ]
 ```
 
-### Multi-Agent System
+### Structured LLM Workflow
 
-LangGraph 기반 Supervisor + Sub-Agent DAG — **Typed Evidence 패턴**:
+LangGraph 기반 조건부 fan-out/fan-in DAG — **Typed Evidence 패턴**:
 
-- **Market Agent**: TimescaleDB OHLCV 조회 → DK-CoT 프롬프트 → `MarketEvidence` JSON 반환
-- **News Agent**: CryptoPanic/SerpAPI 뉴스 검색 → `NewsEvidence` JSON 반환
-- **Report Agent**: upstream evidence 종합 → `IncidentAssessment` JSON 반환 (DB 저장은 Supervisor가 수행)
+- **Market Node**: TimescaleDB OHLCV 조회 → DK-CoT 프롬프트 → `MarketEvidence` JSON 반환
+- **News Node**: CryptoPanic/SerpAPI 뉴스 검색 → `NewsEvidence` JSON 반환
+- **Report Node**: upstream evidence 종합 → `IncidentAssessment` JSON 반환 (DB 저장은 그래프 실행 이후 분리 수행)
 
-각 에이전트는 자유 형식 텍스트가 아닌 **Pydantic 스키마로 검증된 구조화된 JSON**을 반환합니다.
+각 분석 노드는 자유 형식 텍스트가 아닌 **Pydantic 스키마로 검증된 구조화된 JSON**을 반환합니다.
 
 **조건부 라우팅**: 이상치 유형에 따라 실행 경로가 달라집니다.
 - `zscore`/`bollinger` firing → Market + News 병렬 실행 (외부 촉매 가능성)
@@ -153,13 +153,13 @@ src/
 │   ├── vwap.py            # VWAP 지표
 │   └── ensemble.py        # EnsembleScorer + batch scoring
 ├── agent/
-│   ├── graph.py           # Supervisor DAG (조건부 fan-out/fan-in)
+│   ├── graph.py           # LangGraph DAG (조건부 fan-out/fan-in)
 │   ├── schemas.py         # Pydantic 스키마 (MarketEvidence, NewsEvidence, IncidentAssessment)
 │   ├── prompts.py         # DK-CoT + JSON 강제 프롬프트 템플릿
-│   ├── market_agent.py    # Market Analyst Agent
-│   ├── news_agent.py      # News Analyst Agent
-│   ├── report_agent.py    # Report Writer Agent
-│   └── tools/             # query_market, search_news, write_report
+│   ├── market_agent.py    # Market analysis node
+│   ├── news_agent.py      # News analysis node
+│   ├── report_agent.py    # Report synthesis node
+│   └── tools/             # query_market, search_news
 ├── api/
 │   └── main.py            # FastAPI + HTML 리포트 뷰어
 ├── alerts/
@@ -175,7 +175,7 @@ src/
 | Streaming | Upbit WebSocket, Kafka (KRaft) |
 | Storage | TimescaleDB (hypertable + continuous aggregates) |
 | Detection | 4-indicator ensemble (Z-Score, BB, RSI, VWAP) |
-| AI Agent | LangGraph Multi-Agent DAG, Pydantic Typed Evidence, GPT-4o-mini |
+| AI Analysis | LangGraph conditional DAG, Pydantic Typed Evidence, GPT-4o-mini |
 | Alert | Telegram Bot, KakaoTalk |
 | API | FastAPI |
 | Dashboard | Grafana |
@@ -187,7 +187,7 @@ src/
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/reports` | 리포트 목록 (HTML) |
-| GET | `/reports/{id}` | 리포트 상세 - Agent별 분석 (HTML) |
+| GET | `/reports/{id}` | 리포트 상세 - 노드별 분석 (HTML) |
 | GET | `/incidents` | Incident 목록 (JSON) |
 | GET | `/incidents/{id}` | Incident 상세 (JSON) |
 | POST | `/replay` | 과거 시점 이상 감지 재실행 |
@@ -210,9 +210,9 @@ python3 -m pytest tests/ -v
 
 | Variable | Required | Description | 설정 시 활성화 |
 |----------|----------|-------------|----------------|
-| `OPENAI_API_KEY` | Yes | GPT-4o-mini API 키 | Multi-Agent AI 분석 |
-| `SERPAPI_API_KEY` | No | 뉴스 검색 API (월 100회 무료) | News Agent 뉴스 검색 |
-| `CRYPTOPANIC_API_KEY` | No | 크립토 뉴스 API (무료 tier) | News Agent 크립토 전문 뉴스 |
+| `OPENAI_API_KEY` | Yes | GPT-4o-mini API 키 | 구조화 LLM 분석 |
+| `SERPAPI_API_KEY` | No | 뉴스 검색 API (월 100회 무료) | News Node 뉴스 검색 |
+| `CRYPTOPANIC_API_KEY` | No | 크립토 뉴스 API (무료 tier) | News Node 크립토 전문 뉴스 |
 | `TELEGRAM_BOT_TOKEN` | No | Telegram 봇 토큰 | Telegram 알림 |
 | `TELEGRAM_CHAT_ID` | No | Telegram 채팅 ID | Telegram 알림 |
 | `KAKAO_REST_API_KEY` | No | Kakao Developers REST API 키 | KakaoTalk 알림 |

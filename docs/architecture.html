@@ -134,7 +134,7 @@
       </div>
       <div class="card">
         <div class="card-name">incidents</div>
-        <div class="card-desc">Agent Reports + Scores</div>
+        <div class="card-desc">Analysis Reports + Scores</div>
       </div>
       <div class="card">
         <div class="card-name">indicator_snapshots</div>
@@ -181,16 +181,16 @@
 
   <div class="arrow"></div>
 
-  <!-- Multi-Agent -->
+  <!-- Structured LLM workflow -->
   <div class="layer layer-agent">
-    <span class="label label-agent">AI Agent</span>
-    <span class="layer-title">Multi-Agent DAG (LangGraph)</span>
+    <span class="label label-agent">AI Workflow</span>
+    <span class="layer-title">Conditional LLM DAG (LangGraph)</span>
 
     <div class="parallel-label">fan-out: 병렬 실행</div>
     <div class="parallel">
       <div class="subsection">
         <span class="subsection-dot dot-blue"></span>
-        <span class="subsection-title">Market Agent</span>
+        <span class="subsection-title">Market Node</span>
         <div class="tags">
           <span class="tag tag-purple">query_market_window</span>
           <span class="tag tag-purple">GPT-4o-mini</span>
@@ -199,7 +199,7 @@
       </div>
       <div class="subsection">
         <span class="subsection-dot dot-green"></span>
-        <span class="subsection-title">News Agent</span>
+        <span class="subsection-title">News Node</span>
         <div class="tags">
           <span class="tag tag-purple">search_news (SerpAPI)</span>
           <span class="tag tag-purple">GPT-4o-mini</span>
@@ -216,9 +216,9 @@
 
     <div class="subsection">
       <span class="subsection-dot dot-purple"></span>
-      <span class="subsection-title">Report Agent</span>
+      <span class="subsection-title">Report Node</span>
       <div class="tags">
-        <span class="tag tag-purple">write_incident_report</span>
+        <span class="tag tag-purple">IncidentAssessment</span>
         <span class="tag tag-purple">GPT-4o-mini</span>
       </div>
       <div class="card-desc" style="margin-top: 8px;">시장 + 뉴스 종합 리포트 작성 + 신뢰도 점수</div>
@@ -246,7 +246,7 @@
       </div>
       <div class="card">
         <div class="card-name">Report Viewer</div>
-        <div class="card-desc">Agent별 분석 결과 (:8000)</div>
+        <div class="card-desc">노드별 분석 결과 (:8000)</div>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
-"""Tests for multi-agent system."""
+"""Tests for the structured LLM analysis workflow."""
 
 import json
 from unittest.mock import patch, MagicMock
@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from src.agent.market_agent import market_analyst_node
 from src.agent.news_agent import news_analyst_node
 from src.agent.report_agent import report_writer_node
-from src.agent.graph import build_multi_agent_graph, _format_indicator_details, SupervisorState
+from src.agent.graph import build_analysis_workflow, _format_indicator_details, SupervisorState
 from src.agent.schemas import MarketEvidence, NewsEvidence, IncidentAssessment
 
 
@@ -146,13 +146,13 @@ class TestReportWriterNode:
         assert "실패" in assessment.summary
 
 
-class TestBuildMultiAgentGraph:
+class TestBuildAnalysisWorkflow:
     def test_compiles(self):
-        graph = build_multi_agent_graph()
+        graph = build_analysis_workflow()
         assert graph is not None
 
     def test_has_expected_nodes(self):
-        graph = build_multi_agent_graph()
+        graph = build_analysis_workflow()
         node_names = set(graph.get_graph().nodes.keys())
         assert "market_analyst" in node_names
         assert "news_analyst" in node_names
@@ -162,20 +162,20 @@ class TestBuildMultiAgentGraph:
 class TestConditionalRouting:
     """조건부 라우팅 테스트."""
 
-    def test_zscore_fires_both_agents(self):
+    def test_zscore_fires_both_nodes(self):
         from src.agent.graph import route_by_anomaly_type
         state = _base_state()
         state["anomaly"]["firing_indicators"] = ["zscore", "rsi"]
-        agents = route_by_anomaly_type(state)
-        assert "market_analyst" in agents
-        assert "news_analyst" in agents
+        nodes = route_by_anomaly_type(state)
+        assert "market_analyst" in nodes
+        assert "news_analyst" in nodes
 
     def test_rsi_only_fires_market_only(self):
         from src.agent.graph import route_by_anomaly_type
         state = _base_state()
         state["anomaly"]["firing_indicators"] = ["rsi", "vwap"]
-        agents = route_by_anomaly_type(state)
-        assert agents == ["market_analyst"]
+        nodes = route_by_anomaly_type(state)
+        assert nodes == ["market_analyst"]
 
 
 class TestFormatIndicatorDetails:

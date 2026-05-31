@@ -1,4 +1,5 @@
 import json
+import html
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -14,9 +15,11 @@ from src.agent.graph import analyze_anomaly
 
 logger = setup_logging("api")
 
+ALLOWED_SEVERITIES = {"low", "medium", "high", "critical"}
+
 app = FastAPI(
     title="Market Incident Copilot",
-    description="Upbit 시세 이상 감지 + AI Agent 분석 API",
+    description="Upbit 시세 이상 감지 + 구조화 LLM 분석 API",
     version="0.2.0",
 )
 
@@ -64,7 +67,7 @@ REPORT_LIST_HTML = """<!DOCTYPE html>
 <body>
 <div class="container">
   <h1>Market Incident Copilot</h1>
-  <p class="subtitle">Multi-Agent AI 분석 리포트</p>
+  <p class="subtitle">구조화 LLM 분석 리포트</p>
   {cards}
 </div>
 </body>
@@ -151,7 +154,17 @@ REPORT_DETAIL_HTML = """<!DOCTYPE html>
 </html>"""
 
 
+def _escape(value) -> str:
+    return html.escape(str(value), quote=True)
+
+
+def _safe_severity(sev) -> str:
+    sev = str(sev or "low").lower()
+    return sev if sev in ALLOWED_SEVERITIES else "low"
+
+
 def _severity_badge(sev):
+    sev = _safe_severity(sev)
     return f'<span class="badge badge-{sev}">{sev.upper()}</span>'
 
 
@@ -167,8 +180,8 @@ def _build_indicator_section(details):
         else:
             value = str(detail)
         cards += f"""<div class="indicator-card">
-  <div class="indicator-name">{name}</div>
-  <div class="indicator-value">{value}</div>
+  <div class="indicator-name">{_escape(name)}</div>
+  <div class="indicator-value">{_escape(value)}</div>
 </div>"""
     return f"""<div class="section">
   <div class="section-header">
@@ -185,11 +198,11 @@ def _build_agent_section(icon, title, agent_name, content):
         return ""
     return f"""<div class="section">
   <div class="section-header">
-    <span class="section-icon">{icon}</span>
-    <span class="section-title">{title}</span>
-    <span class="section-agent">{agent_name}</span>
+    <span class="section-icon">{_escape(icon)}</span>
+    <span class="section-title">{_escape(title)}</span>
+    <span class="section-agent">{_escape(agent_name)}</span>
   </div>
-  <div class="section-body">{content}</div>
+  <div class="section-body">{_escape(content)}</div>
 </div>"""
 
 
@@ -279,7 +292,7 @@ def report_list(limit: int = 30):
 
     cards = ""
     for r in rows:
-        sev = r["severity"] or "low"
+        sev = _safe_severity(r["severity"])
         firing = r.get("firing_indicators") or []
         score = r.get("ensemble_score")
         score_str = f"{score:.2f}" if score is not None else "-"
@@ -288,18 +301,18 @@ def report_list(limit: int = 30):
         has_report = r.get("has_report", False)
         report_icon = "📝" if has_report else "⏳"
 
-        indicator_tags = "".join(f'<span class="indicator-tag">{f}</span>' for f in firing)
+        indicator_tags = "".join(f'<span class="indicator-tag">{_escape(f)}</span>' for f in firing)
 
-        cards += f"""<a href="/reports/{r['incident_id']}">
+        cards += f"""<a href="/reports/{_escape(r['incident_id'])}">
 <div class="card">
   <div class="card-header">
-    <span class="coin">{report_icon} {r['coin_code']}</span>
+    <span class="coin">{_escape(report_icon)} {_escape(r['coin_code'])}</span>
     <span class="badge badge-{sev}">{sev.upper()}</span>
   </div>
   <div class="meta">
     <span>Score: {score_str}</span>
     <span>Confidence: {conf_str}</span>
-    <span>{r['detected_at']}</span>
+    <span>{_escape(r['detected_at'])}</span>
   </div>
   <div class="indicators">{indicator_tags}</div>
 </div></a>"""
@@ -321,7 +334,7 @@ def report_detail(incident_id: str):
     if not row:
         raise HTTPException(status_code=404, detail="Incident not found")
 
-    sev = row.get("severity") or "low"
+    sev = _safe_severity(row.get("severity"))
     score = row.get("ensemble_score")
     confidence = row.get("confidence_score")
     firing = row.get("firing_indicators") or []
@@ -348,19 +361,19 @@ def report_detail(incident_id: str):
     indicators_section = _build_indicator_section(
         indicator_details if isinstance(indicator_details, dict) else {}
     )
-    market_section = _build_agent_section("📈", "시장 분석", "Market Agent", _format_market(market_raw))
-    news_section = _build_agent_section("📰", "뉴스 분석", "News Agent", _format_news(news_raw))
-    report_section = _build_agent_section("📋", "최종 리포트", "Report Agent", _format_report(report_raw))
+    market_section = _build_agent_section("📈", "시장 분석", "Market Node", _format_market(market_raw))
+    news_section = _build_agent_section("📰", "뉴스 분석", "News Node", _format_news(news_raw))
+    report_section = _build_agent_section("📋", "최종 리포트", "Report Node", _format_report(report_raw))
 
     if not market_raw and not news_raw and not report_raw:
-        report_section = '<div class="no-report">Agent 분석이 아직 완료되지 않았습니다.</div>'
+        report_section = '<div class="no-report">LLM 분석이 아직 완료되지 않았습니다.</div>'
 
     html = (REPORT_DETAIL_HTML
-        .replace("{coin}", row["coin_code"])
+        .replace("{coin}", _escape(row["coin_code"]))
         .replace("{severity}", sev)
         .replace("{severity_upper}", sev.upper())
-        .replace("{detected_at}", str(row["detected_at"]))
-        .replace("{incident_id}", incident_id)
+        .replace("{detected_at}", _escape(row["detected_at"]))
+        .replace("{incident_id}", _escape(incident_id))
         .replace("{ensemble_score}", f"{score:.2f}" if score is not None else "-")
         .replace("{confidence}", f"{confidence:.1f}" if confidence is not None else "-")
         .replace("{firing_count}", str(len(firing)))

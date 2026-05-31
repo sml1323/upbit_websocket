@@ -143,15 +143,15 @@
 
   <div class="arrow">↓</div>
 
-  <!-- Agent -->
+  <!-- Structured LLM workflow -->
   <div class="layer layer-agent">
-    <span class="label label-agent">AI Agent</span>
-    <span class="layer-title">Multi-Agent DAG (LangGraph)</span>
+    <span class="label label-agent">AI Workflow</span>
+    <span class="layer-title">Conditional LLM DAG (LangGraph)</span>
 
     <div class="parallel-label">fan-out: 병렬 실행</div>
     <div class="row">
       <div class="box">
-        <div class="box-title"><span class="dot dot-blue"></span>Market Agent</div>
+        <div class="box-title"><span class="dot dot-blue"></span>Market Node</div>
         <div class="tags">
           <span class="tag tag-purple">query_market</span>
           <span class="tag tag-purple">GPT-4o-mini</span>
@@ -159,7 +159,7 @@
         <div class="box-desc">OHLCV 조회 + 기술적 분석</div>
       </div>
       <div class="box">
-        <div class="box-title"><span class="dot dot-green"></span>News Agent</div>
+        <div class="box-title"><span class="dot dot-green"></span>News Node</div>
         <div class="tags">
           <span class="tag tag-purple">SerpAPI</span>
           <span class="tag tag-purple">GPT-4o-mini</span>
@@ -169,9 +169,9 @@
     </div>
     <div class="fan-in">── fan-in ──</div>
     <div class="box" style="margin-top: 0;">
-      <div class="box-title"><span class="dot dot-purple"></span>Report Agent</div>
+      <div class="box-title"><span class="dot dot-purple"></span>Report Node</div>
       <div class="tags">
-        <span class="tag tag-purple">write_report</span>
+        <span class="tag tag-purple">IncidentAssessment</span>
         <span class="tag tag-purple">GPT-4o-mini</span>
       </div>
       <div class="box-desc">시장 + 뉴스 종합 → 리포트 + 신뢰도 점수</div>
@@ -199,7 +199,7 @@
       </div>
       <div class="card">
         <div class="card-name">Report Viewer</div>
-        <div class="card-desc">Agent별 결과</div>
+        <div class="card-desc">노드별 결과</div>
       </div>
     </div>
   </div>

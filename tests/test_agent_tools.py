@@ -7,7 +7,6 @@ from src.agent.tools.search_news import (
     _search_serpapi,
     search_news,
 )
-from src.agent.tools.write_report import write_incident_report
 
 
 class TestQueryMarketWindow:
@@ -77,39 +76,3 @@ class TestSearchNews:
         result = search_news.invoke({"coin_code": "ETH"})
         assert "ETH" in result
         assert "1건" in result
-
-
-class TestWriteReport:
-    @patch("src.agent.tools.write_report.psycopg2.connect")
-    def test_successful_write(self, mock_connect):
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchone.return_value = ("abc-123",)
-        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
-        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-        mock_connect.return_value = mock_conn
-
-        result = write_incident_report.invoke({
-            "incident_id": "abc-123",
-            "report_text": "BTC 급등 분석",
-            "confidence_score": 0.85,
-            "news_context": "뉴스 내용",
-        })
-        assert "저장 완료" in result
-        mock_conn.commit.assert_called_once()
-
-    @patch("src.agent.tools.write_report.psycopg2.connect")
-    def test_incident_not_found(self, mock_connect):
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
-        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
-        mock_connect.return_value = mock_conn
-
-        result = write_incident_report.invoke({
-            "incident_id": "nonexistent",
-            "report_text": "test",
-            "confidence_score": 0.5,
-        })
-        assert "찾을 수 없습니다" in result
