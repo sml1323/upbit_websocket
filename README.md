@@ -14,7 +14,7 @@
 |---|---------|-------------|
 | **Pipeline** | 실시간 데이터 수집 | Upbit WebSocket -> Kafka -> TimescaleDB |
 | **Detection** | 앙상블 이상 감지 | Z-Score, Bollinger Bands, RSI, VWAP 4개 지표 가중치 투표 |
-| **AI** | 구조화 LLM 분석 | Typed Evidence 패턴 — Pydantic 스키마 + DK-CoT 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
+| **AI** | 구조화 LLM 분석 | Typed Evidence 패턴 — OpenAI Structured Outputs로 Pydantic 스키마 강제 + DK-CoT 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
 | **Alert** | 멀티 채널 알림 | Telegram + KakaoTalk 동시 지원 |
 | **Dashboard** | Grafana 모니터링 | 거래대금 Top 10, 실시간 가격, Z-Score, Incidents |
 | **Report** | 리포트 뷰어 | 각 분석 노드별 응답을 구조화된 HTML로 조회 |
@@ -101,7 +101,9 @@ LangGraph 기반 조건부 fan-out/fan-in DAG — **Typed Evidence 패턴**:
 - **News Node**: CryptoPanic/SerpAPI 뉴스 검색 → `NewsEvidence` JSON 반환
 - **Report Node**: upstream evidence 종합 → `IncidentAssessment` JSON 반환 (DB 저장은 그래프 실행 이후 분리 수행)
 
-각 분석 노드는 자유 형식 텍스트가 아닌 **Pydantic 스키마로 검증된 구조화된 JSON**을 반환합니다.
+각 분석 노드는 자유 형식 텍스트가 아닌 **Pydantic 스키마로 강제된 구조화된 JSON**을 반환합니다.
+프롬프트로 형식을 부탁한 뒤 사후 검증하는 것이 아니라, `with_structured_output(..., method="json_schema")`로
+OpenAI Structured Outputs API 층에서 스키마를 강제합니다 — 모델이 스키마를 벗어난 응답을 애초에 생성할 수 없습니다.
 
 **조건부 라우팅**: 이상치 유형에 따라 실행 경로가 달라집니다.
 - `zscore`/`bollinger` firing → Market + News 병렬 실행 (외부 촉매 가능성)
@@ -175,7 +177,7 @@ src/
 | Streaming | Upbit WebSocket, Kafka (KRaft) |
 | Storage | TimescaleDB (hypertable + continuous aggregates) |
 | Detection | 4-indicator ensemble (Z-Score, BB, RSI, VWAP) |
-| AI Analysis | LangGraph conditional DAG, Pydantic Typed Evidence, GPT-4o-mini |
+| AI Analysis | LangGraph conditional DAG, OpenAI Structured Outputs (Pydantic Typed Evidence), GPT-4o-mini |
 | Alert | Telegram Bot, KakaoTalk |
 | API | FastAPI |
 | Dashboard | Grafana |

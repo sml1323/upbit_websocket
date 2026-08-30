@@ -28,7 +28,14 @@ def report_writer_node(state: dict) -> dict:
             api_key=OPENAI_API_KEY,
             temperature=0,
         )
-        response = llm.invoke([
+        # OpenAI Structured Outputs 로 스키마를 API 층에서 강제한다.
+        # invoke() 가 IncidentAssessment 인스턴스를 직접 반환한다 (.content 파싱 불필요).
+        # 주의: LLM_MODEL 이 gpt-3*/gpt-4-*/gpt-4 면 langchain 이 warning 만 남기고
+        #       function_calling 으로 조용히 강등한다 — 강제가 풀리므로 모델 교체 시 확인할 것.
+        structured_llm = llm.with_structured_output(
+            IncidentAssessment, method="json_schema"
+        )
+        assessment = structured_llm.invoke([
             SystemMessage(content=REPORT_SYSTEM_PROMPT),
             HumanMessage(content=(
                 f"코인: {coin_code}\n"
@@ -40,9 +47,6 @@ def report_writer_node(state: dict) -> dict:
                 f"[뉴스 분석 (JSON)]\n{news}"
             )),
         ])
-
-        # JSON 파싱 + 스키마 검증
-        assessment = IncidentAssessment.model_validate_json(response.content)
 
         logger.info("Report node 완료: %s %s (confidence=%.2f)", coin_code, incident_id, assessment.confidence)
         return {"final_report": assessment.model_dump_json(ensure_ascii=False)}

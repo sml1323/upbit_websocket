@@ -28,7 +28,12 @@ def news_analyst_node(state: dict) -> dict:
             api_key=OPENAI_API_KEY,
             temperature=0,
         )
-        response = llm.invoke([
+        # OpenAI Structured Outputs 로 스키마를 API 층에서 강제한다.
+        # invoke() 가 NewsEvidence 인스턴스를 직접 반환한다 (.content 파싱 불필요).
+        # 주의: LLM_MODEL 이 gpt-3*/gpt-4-*/gpt-4 면 langchain 이 warning 만 남기고
+        #       function_calling 으로 조용히 강등한다 — 강제가 풀리므로 모델 교체 시 확인할 것.
+        structured_llm = llm.with_structured_output(NewsEvidence, method="json_schema")
+        evidence = structured_llm.invoke([
             SystemMessage(content=NEWS_SYSTEM_PROMPT),
             HumanMessage(content=(
                 f"코인: {coin_code}\n\n"
@@ -36,9 +41,6 @@ def news_analyst_node(state: dict) -> dict:
                 f"앙상블 지표:\n{state.get('indicator_details', 'N/A')}"
             )),
         ])
-
-        # JSON 파싱 + 스키마 검증
-        evidence = NewsEvidence.model_validate_json(response.content)
         logger.info("News node 분석 완료: %s (sentiment=%s)", coin_code, evidence.sentiment)
         return {"news_analysis": evidence.model_dump_json(ensure_ascii=False)}
 

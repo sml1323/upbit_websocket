@@ -53,16 +53,39 @@ MOCK_REPORT_JSON = json.dumps({
 }, ensure_ascii=False)
 
 
+MOCK_MARKET_OBJ = MarketEvidence.model_validate_json(MOCK_MARKET_JSON)
+MOCK_NEWS_OBJ = NewsEvidence.model_validate_json(MOCK_NEWS_JSON)
+MOCK_REPORT_OBJ = IncidentAssessment.model_validate_json(MOCK_REPORT_JSON)
+
+
+def _structured_llm_mock(obj):
+    """with_structured_output(...).invoke(...) 가 Pydantic 인스턴스를 반환하는 목.
+
+    스키마 강제 전환 후 노드는 .content 를 파싱하지 않고 모델 객체를 직접 받는다.
+    """
+    mock_llm = MagicMock()
+    mock_llm.with_structured_output.return_value.invoke.return_value = obj
+    return mock_llm
+
+
+def _assert_schema_enforced(mock_llm, schema):
+    """API 층 강제가 실제로 걸렸는지 — 프롬프트 부탁으로 회귀하면 여기서 잡힌다."""
+    mock_llm.with_structured_output.assert_called_once_with(
+        schema, method="json_schema"
+    )
+    mock_llm.invoke.assert_not_called()
+
+
 class TestMarketAnalystNode:
     @patch("src.agent.market_agent.ChatOpenAI")
     @patch("src.agent.market_agent.query_market_window")
     def test_success(self, mock_tool, mock_llm_cls):
         mock_tool.invoke.return_value = "BTC: close=50000, volume=100"
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content=MOCK_MARKET_JSON)
+        mock_llm = _structured_llm_mock(MOCK_MARKET_OBJ)
         mock_llm_cls.return_value = mock_llm
 
         result = market_analyst_node(_base_state())
+        _assert_schema_enforced(mock_llm, MarketEvidence)
         assert "market_analysis" in result
         evidence = MarketEvidence.model_validate_json(result["market_analysis"])
         assert evidence.confidence == 0.85
@@ -83,11 +106,11 @@ class TestNewsAnalystNode:
     @patch("src.agent.news_agent.search_news")
     def test_success(self, mock_tool, mock_llm_cls):
         mock_tool.invoke.return_value = "BTC 관련 뉴스 3건"
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content=MOCK_NEWS_JSON)
+        mock_llm = _structured_llm_mock(MOCK_NEWS_OBJ)
         mock_llm_cls.return_value = mock_llm
 
         result = news_analyst_node(_base_state())
+        _assert_schema_enforced(mock_llm, NewsEvidence)
         assert "news_analysis" in result
         evidence = NewsEvidence.model_validate_json(result["news_analysis"])
         assert evidence.sentiment == "BULLISH"
@@ -105,8 +128,7 @@ class TestNewsAnalystNode:
 class TestReportWriterNode:
     @patch("src.agent.report_agent.ChatOpenAI")
     def test_success(self, mock_llm_cls):
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content=MOCK_REPORT_JSON)
+        mock_llm = _structured_llm_mock(MOCK_REPORT_OBJ)
         mock_llm_cls.return_value = mock_llm
 
         state = _base_state()
@@ -114,6 +136,7 @@ class TestReportWriterNode:
         state["news_analysis"] = MOCK_NEWS_JSON
 
         result = report_writer_node(state)
+        _assert_schema_enforced(mock_llm, IncidentAssessment)
         assert "final_report" in result
         assessment = IncidentAssessment.model_validate_json(result["final_report"])
         assert assessment.confidence == 0.8
@@ -121,8 +144,7 @@ class TestReportWriterNode:
 
     @patch("src.agent.report_agent.ChatOpenAI")
     def test_with_error_inputs(self, mock_llm_cls):
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content=MOCK_REPORT_JSON)
+        mock_llm = _structured_llm_mock(MOCK_REPORT_OBJ)
         mock_llm_cls.return_value = mock_llm
 
         state = _base_state()
@@ -130,6 +152,7 @@ class TestReportWriterNode:
         state["news_analysis"] = MOCK_NEWS_JSON
 
         result = report_writer_node(state)
+        _assert_schema_enforced(mock_llm, IncidentAssessment)
         assert "final_report" in result
 
     @patch("src.agent.report_agent.ChatOpenAI")
