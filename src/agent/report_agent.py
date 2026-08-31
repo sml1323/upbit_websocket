@@ -11,7 +11,7 @@ from src.config import setup_logging
 
 logger = setup_logging("report-agent")
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5.6-luna")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 
