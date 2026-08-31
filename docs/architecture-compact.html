@@ -119,7 +119,7 @@
   <!-- Detection -->
   <div class="layer layer-detection">
     <span class="label label-detection">Detection</span>
-    <span class="layer-title">Ensemble Anomaly Detector</span>
+    <span class="layer-title">지표 가중 투표 감지</span>
     <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
       <div style="flex: 2;">
         <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">
@@ -146,7 +146,7 @@
   <!-- Structured LLM workflow -->
   <div class="layer layer-agent">
     <span class="label label-agent">AI Workflow</span>
-    <span class="layer-title">Conditional LLM DAG (LangGraph)</span>
+    <span class="layer-title">LangGraph 워크플로우</span>
 
     <div class="parallel-label">fan-out: 병렬 실행</div>
     <div class="row">
@@ -154,7 +154,7 @@
         <div class="box-title"><span class="dot dot-blue"></span>Market Node</div>
         <div class="tags">
           <span class="tag tag-purple">query_market</span>
-          <span class="tag tag-purple">GPT-4o-mini</span>
+          <span class="tag tag-purple">GPT-5.6-luna</span>
         </div>
         <div class="box-desc">OHLCV 조회 + 기술적 분석</div>
       </div>
@@ -162,7 +162,7 @@
         <div class="box-title"><span class="dot dot-green"></span>News Node</div>
         <div class="tags">
           <span class="tag tag-purple">SerpAPI</span>
-          <span class="tag tag-purple">GPT-4o-mini</span>
+          <span class="tag tag-purple">GPT-5.6-luna</span>
         </div>
         <div class="box-desc">뉴스 검색 + 연관성 분석</div>
       </div>
@@ -172,7 +172,7 @@
       <div class="box-title"><span class="dot dot-purple"></span>Report Node</div>
       <div class="tags">
         <span class="tag tag-purple">IncidentAssessment</span>
-        <span class="tag tag-purple">GPT-4o-mini</span>
+        <span class="tag tag-purple">GPT-5.6-luna</span>
       </div>
       <div class="box-desc">시장 + 뉴스 종합 → 리포트 + 신뢰도 점수</div>
     </div>

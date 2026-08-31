@@ -174,7 +174,7 @@
 <body>
 <div class="container">
   <div class="routing-section">
-    <div class="routing-title">Conditional Routing</div>
+    <div class="routing-title">조건부 라우팅</div>
     <div class="routing-flow">
       <div class="routing-start">Anomaly<br>Detected</div>
       <div class="arrow">&rarr;</div>
@@ -211,8 +211,8 @@
   <div class="bottom-row">
     <div class="info-box">
       <div class="info-title">
-        Typed Evidence
-        <span class="badge badge-green">Pydantic</span>
+        구조화 출력 강제
+        <span class="badge badge-green">Structured Outputs</span>
       </div>
       <div class="info-desc">에이전트 출력을 구조화된 JSON 스키마로 강제.<br>자유 텍스트 대신 검증 가능한 계약(contract).</div>
       <div class="code-block">
@@ -227,17 +227,17 @@
 
     <div class="info-box">
       <div class="info-title">
-        DK-CoT Prompt
-        <span class="badge badge-blue">Domain Knowledge</span>
+        분석 절차 프롬프트
+        <span class="badge badge-blue">4단계 SOP</span>
       </div>
-      <div class="info-desc">업비트 특화 분석 프레임워크를 프롬프트에 주입.<br>LLM이 도메인 전문가처럼 단계별 분석 수행.</div>
+      <div class="info-desc">업비트 특화 분석 절차(SOP)를 프롬프트에 주입.<br>LLM이 도메인 전문가처럼 단계별 분석 수행.</div>
       <ul class="prompt-list">
         <li><span class="step-num">1</span><span class="prompt-text">Volume Context</span><span class="prompt-detail">&nbsp;거래량 비교</span></li>
         <li><span class="step-num">2</span><span class="prompt-text">Price Action</span><span class="prompt-detail">&nbsp;가격-거래량 방향</span></li>
         <li><span class="step-num">3</span><span class="prompt-text">Support / Resistance</span><span class="prompt-detail">&nbsp;지지/저항</span></li>
         <li><span class="step-num">4</span><span class="prompt-text">Trend</span><span class="prompt-detail">&nbsp;상승/하락/횡보</span></li>
       </ul>
-      <div class="json-force">JSON 출력 강제 &rarr; Pydantic 스키마 자동 검증</div>
+      <div class="json-force">OpenAI Structured Outputs &rarr; Pydantic 스키마 강제</div>
     </div>
   </div>
 </div>
