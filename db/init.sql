@@ -8,12 +8,20 @@ CREATE TABLE IF NOT EXISTS tickers (
     time         TIMESTAMPTZ      NOT NULL,
     code         TEXT             NOT NULL,
     trade_price  DOUBLE PRECISION NOT NULL,
-    trade_volume DOUBLE PRECISION NOT NULL
+    trade_volume DOUBLE PRECISION NOT NULL,
+    -- 당일(KST) 누적 거래량. 체결마다 단조 증가 → 같은 ms 의 서로 다른 체결을 구분하는 자연키 재료
+    acc_trade_volume DOUBLE PRECISION NOT NULL
 );
 
 SELECT create_hypertable('tickers', 'time', if_not_exists => TRUE);
 
-CREATE INDEX IF NOT EXISTS idx_tickers_code_time ON tickers (code, time DESC);
+-- UNIQUE: ON CONFLICT 의 기준(arbiter) 인덱스. 두 종류의 중복을 모두 막는다.
+--   1) Consumer at-least-once 재처리 (INSERT 성공 후 offset commit 전 죽음)
+--   2) Upbit ticker 재전송 (체결 없이 같은 내용 반복, 전체 메시지의 약 40%)
+-- 같은 ms 에 난 서로 다른 체결은 acc_trade_volume 이 달라 정상 적재된다.
+-- hypertable 의 UNIQUE 는 파티션 컬럼(time)을 반드시 포함해야 한다.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tickers_code_time
+    ON tickers (code, time DESC, acc_trade_volume);
 
 -- ============================================================
 -- 2. 1분 Continuous Aggregate
