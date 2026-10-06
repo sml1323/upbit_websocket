@@ -277,6 +277,25 @@ class TestSearchNews:
         result, _ = _run_search(monkeypatch, "error", "ok")
         assert result.attempts[0].error_code == "timeout"
 
+    def test_retired_cryptopanic_falls_back_to_serpapi(self, monkeypatch, mock_get):
+        # 키가 설정돼 있어도 폐기된 v1 경로는 404 — 오류로 기록하고 SerpAPI 로 넘어가야 한다.
+        mock_get.side_effect = [
+            _response(404, {"status": "api_error", "info": "Unknown API endpoint."}),
+            _response(200, SERP_OK),
+        ]
+        monkeypatch.setattr(sn, "CRYPTOPANIC_API_KEY", "test-key")
+        monkeypatch.setattr(sn, "SERPAPI_API_KEY", "test-key")
+
+        result = search_news.invoke({"coin_code": "BTC"})
+
+        assert result.status == "ok"
+        assert [(a.provider, a.status, a.error_code) for a in result.attempts] == [
+            ("cryptopanic", "error", "http_error"),
+            ("serpapi", "ok", None),
+        ]
+        assert [a.url for a in result.articles] == [SERP_ITEM["link"], "https://news.example.kr/b"]
+        assert mock_get.call_count == 2
+
 
 class TestNoSecretLeak:
     SECRET = "SECRET-KEY-123"
@@ -291,6 +310,23 @@ class TestNoSecretLeak:
             result = search_news.invoke({"coin_code": "BTC"})
         assert result.status == "error"
         assert "serpapi" in caplog.text  # 로그는 남긴다 — 키만 빠진다
+        assert self.SECRET not in caplog.text
+        assert self.SECRET not in result.model_dump_json()
+
+    @pytest.mark.parametrize("status, reason", [(401, "Unauthorized"), (429, "Too Many Requests")])
+    def test_http_error_does_not_leak_key(self, monkeypatch, mock_get, caplog, status, reason):
+        # 실제 requests 처럼 응답 URL 에 키를 넣는다 — raise_for_status() 메시지에 이 URL 이 그대로 들어간다.
+        resp = _response(status, {"error": "Invalid API key."})
+        resp.url = f"https://serpapi.com/search.json?api_key={self.SECRET}&q=BTC"
+        resp.reason = reason
+        mock_get.return_value = resp
+        monkeypatch.setattr(sn, "CRYPTOPANIC_API_KEY", "")
+        monkeypatch.setattr(sn, "SERPAPI_API_KEY", self.SECRET)
+        with caplog.at_level(logging.INFO):
+            result = search_news.invoke({"coin_code": "BTC"})
+        assert result.status == "error"
+        assert result.attempts[-1].error_code == "http_error"
+        assert f"http_status={status}" in caplog.text  # 로그는 남긴다 — 키만 빠진다
         assert self.SECRET not in caplog.text
         assert self.SECRET not in result.model_dump_json()
 

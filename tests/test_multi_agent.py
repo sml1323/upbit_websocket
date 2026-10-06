@@ -199,6 +199,7 @@ class TestNewsAnalystNode:
 
         evidence = NewsEvidence.model_validate_json(result["news_analysis"])
         assert evidence.headlines == ["[ERROR] 뉴스 분석 실패"]
+        assert "News node 실패: Exception" in caplog.text  # 실패 로그는 남긴다 — 클래스 이름만
         assert "sk-SECRET" not in result["news_analysis"]
         assert "sk-SECRET" not in caplog.text
 

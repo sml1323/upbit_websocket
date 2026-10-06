@@ -2,7 +2,7 @@
 
 작성·갱신: 2026-10-06 (KST)
 
-**문서 상태: 전체 구조·5단계 순서는 합의됨. R1은 2026-10-06 구현·검증 완료(미커밋). R2 이후는 미착수.**
+**문서 상태: 전체 구조·5단계 순서는 합의됨. R1은 2026-10-06 구현·검증 완료, 로컬 커밋 `de1b681`(push 전). R2 이후는 미착수.**
 
 ## 1. 목표와 범위
 
@@ -38,7 +38,7 @@ R1 상세 설계를 검토한 뒤 R1만 구현 계획으로 구체화한다. R2 
 
 | ID | 단계 | 상태 | 선행 조건 | 완료 시 보이는 결과 |
 |---|---|---|---|---|
-| R1 | 뉴스 도구 반환 개선 | 완료 | 설계 승인, [R1-PLAN.md](R1-PLAN.md) 실행·검증 완료(2026-10-06, 미커밋) | URL이 뉴스 노드 입력까지 유지되고 빈 결과·오류·사용 불가를 구분. 조회 실패는 뉴스 분석 결과에 실패로 표시 |
+| R1 | 뉴스 도구 반환 개선 | 완료 | 설계 승인, [R1-PLAN.md](R1-PLAN.md) 실행·검증 완료(2026-10-06, 커밋 `de1b681`) | URL이 뉴스 노드 입력까지 유지되고 빈 결과·오류·사용 불가를 구분. 조회 실패는 뉴스 분석 결과에 실패로 표시 |
 | R2 | 기사 근거 확보 | 예정 | R1 완료 | 본문·시각·수집 상태를 갖춘 기사 자료를 분석에 제공 |
 | R3 | 기존 리포트 개선 | 예정 | R1·R2 완료 | 주장→근거→원문을 추적하고 분석 실패·불확실성을 화면에서도 구분 |
 | R4 | 추가 조사와 품질 평가 | 예정 | R3 완료 | 제한된 추가 조사의 효과·비용을 비교하고 도입 여부를 결정 |
@@ -200,10 +200,9 @@ coin_code
 - [x] 무효 항목은 제외하고 유효 항목만 채택하며, 항목이 전부 무효면 `invalid_response` — 근거: `test_drops_only_invalid_items`, `test_all_items_invalid_is_invalid_response`, `test_caps_at_five_valid_articles`
 - [x] 타임아웃(`ConnectTimeout` 포함)·HTTP 오류·JSON 해석 실패·연결 실패가 각 오류 분류로 처리됨 — 근거: `TestGetJson` 6건
 - [x] 반환값·로그·`NewsEvidence`에 API 키·요청 URL·예외 원문이 들어가지 않음
-  — 근거: `TestNoSecretLeak`(연결 실패·타임아웃), `test_tool_failure`, `test_llm_failure_hides_exception_text`, 비교 스크립트 3번(HTTP 401, 로그 키 노출 False).
-  HTTP 401·429 경로는 pytest가 아니라 비교 스크립트로만 확인했다(아래 보류한 테스트 보강 1번).
+  — 근거: `TestNoSecretLeak`(연결 실패·타임아웃·HTTP 401·429), `test_tool_failure`, `test_llm_failure_hides_exception_text`, 비교 스크립트 3·4번(로그 키 노출 False)
 - [x] 비성공 상태에서는 LLM을 호출하지 않고 상태별 `NewsEvidence`를 만들며, `ok`에서만 structured output을 호출함 — 근거: `test_no_articles_skips_llm` 3건, `test_success`
-- [x] 기존 `NewsEvidence` 및 그래프 연결 회귀 없음 — 근거: 전체 201 passed(`TestBuildAnalysisWorkflow`, `TestConditionalRouting`, `TestReportWriterNode` 포함)
+- [x] 기존 `NewsEvidence` 및 그래프 연결 회귀 없음 — 근거: 전체 테스트 통과(`TestBuildAnalysisWorkflow`, `TestConditionalRouting`, `TestReportWriterNode` 포함)
 
 구현은 테스트 실패 확인→최소 수정→리팩터링 순서로 진행한다. 우선 외부 API·DB·LLM을 mock하여
 공급자 응답→도구→노드 입력의 통합 경로를 검증한다. 변경 대상 코드 커버리지는 80% 이상을 확인하되
@@ -213,16 +212,16 @@ coin_code
 UI 변경이 없는 R1에서는 브라우저 E2E를 추가하지 않고, R3에서 저장→리포트 표시 경로를 검증한다.
 프로젝트 Python은 `.venv/bin/python`을 사용한다.
 
-**검증 결과(2026-10-06, 미커밋 작업 트리, 기준 `1fc7119`):** `.venv/bin/python -m pytest tests` → 201 passed, 1 warning(기존 127).
+**검증 결과(2026-10-06, 커밋 `de1b681`, 기준 `1fc7119`):** `.venv/bin/python -m pytest tests` → 201 passed, 1 warning(기존 127).
 표준 라이브러리 `trace` 줄 단위 측정에서 `search_news.py`·`news_agent.py`·`schemas.py` 모두 미실행 줄 0(100%).
 변경 전후 비교 스크립트 출력이 계획의 Expected와 일치했다. 새 맥락의 최종 리뷰(opus)는 Critical·Important 0건, 테스트 보강 Minor 3건이었다.
 실제 LLM·SerpAPI는 호출하지 않았으며 실제 모델의 판단 품질은 검증하지 않았다.
 
-보류한 테스트 보강(사용자 결정 대기, 동작 결함 아님):
+**테스트 보강(2026-10-06, 사용자 선택):** 최종 리뷰의 Minor 3건을 추가해 전체 204 passed. 각 테스트는 일부러 망가뜨린 코드에서 실패함을 임시 복사본에서 확인했다.
 
-1. HTTP 401·429 응답에서 키 미노출을 pytest로 고정(`TestNoSecretLeak`에 401 응답 사례 추가).
-2. `test_llm_failure_hides_exception_text`에 “News node 실패: Exception” 로그가 실제로 남는지 확인 추가.
-3. 키 설정 → CryptoPanic 404 → SerpAPI 200을 한 번에 지나는 통합 테스트 추가.
+1. `test_http_error_does_not_leak_key`(401·429) — `raise_for_status()`로 되돌리고 예외를 로그에 남기면 실패한다.
+2. `test_llm_failure_hides_exception_text`에 “News node 실패: Exception” 로그 존재 확인 추가 — 실패 로그를 지우면 실패한다.
+3. `test_retired_cryptopanic_falls_back_to_serpapi` — 키 설정 상태에서 CryptoPanic 404 → SerpAPI 200을 실제 요청 경로로 지난다. 오류 시 폴백을 멈추면 실패한다.
 
 ## 5. R2 — 기사 근거 확보
 
@@ -288,6 +287,7 @@ UI 변경이 없는 R1에서는 브라우저 E2E를 추가하지 않고, R3에�
 | 2026-10-02 | R1 상세 설계 검토 반영. 기사 0건은 코드가 결정(사용자 결정), 공급자 응답 해석·항목 검증·오류 분류·로그 보안 보강, CryptoPanic 폐기 확인, 일반 웹 검색은 R4 후보로 기록 | [누적 기록](LEARNING_LOG.md) |
 | 2026-10-02 | R1 상세 설계 사용자 최종 승인. [R1-PLAN.md](R1-PLAN.md) 작성, 임시 복사본에서 계획 코드 재생 검증(201 passed) | [누적 기록](LEARNING_LOG.md) |
 | 2026-10-02 | 사용자가 Native 실행 선택. R1 상태 `진행`, R1.0 변경 전 기준 기록 | [누적 기록](LEARNING_LOG.md) |
-| 2026-10-06 | R1 완료. 미커밋 작업 트리(기준 `1fc7119`), 201 passed, `trace` 커버리지 100%, 최종 리뷰 Critical·Important 0건. 테스트 보강 3건 보류 | [누적 기록](LEARNING_LOG.md) |
+| 2026-10-06 | R1 완료. 커밋 `de1b681`(로컬 master, push 전, 기준 `1fc7119`), 201 passed, `trace` 커버리지 100%, 최종 리뷰 Critical·Important 0건 | [누적 기록](LEARNING_LOG.md) |
+| 2026-10-06 | 리뷰 Minor 3건을 테스트로 보강(204 passed), 문서의 커밋 상태 표기 갱신. 별도 후속 커밋 | [누적 기록](LEARNING_LOG.md) |
 
 단계가 완료되면 해당 행에 검증 기록과 소스 버전을 추가한다. 예정·보류 단계에 완료 체크를 미리 하지 않는다.
