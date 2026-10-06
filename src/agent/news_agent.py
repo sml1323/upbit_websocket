@@ -16,12 +16,29 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5.6-luna")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 
+def _neutral_evidence(headlines: list[str]) -> NewsEvidence:
+    """판단할 기사가 없을 때의 고정 결과 — 모델을 부르지 않고 코드가 정한다."""
+    return NewsEvidence(
+        headlines=headlines,
+        sentiment="NEUTRAL",
+        relevance_score=0.0,
+        source_quality="unknown",
+    )
+
+
 def news_analyst_node(state: dict) -> dict:
-    """뉴스 검색 → LLM 분석 → NewsEvidence JSON 반환."""
+    """뉴스 검색 → (기사가 있을 때만) LLM 분석 → NewsEvidence JSON 반환."""
     coin_code = state["anomaly"]["coin_code"]
 
     try:
-        news_data = search_news.invoke({"coin_code": coin_code})
+        result = search_news.invoke({"coin_code": coin_code})
+
+        if result.status != "ok":
+            # 기사가 없으면 모델이 분석할 자료가 없고 결과가 규칙으로 정해진다.
+            # error 는 다른 노드 fallback 과 같은 [ERROR] 표기로 '뉴스 없음'과 구분한다 (R3 에서 상태 필드로 교체).
+            headlines = ["[ERROR] 뉴스 조회 실패"] if result.status == "error" else []
+            logger.info("News node LLM 생략: %s (status=%s)", coin_code, result.status)
+            return {"news_analysis": _neutral_evidence(headlines).model_dump_json(ensure_ascii=False)}
 
         llm = ChatOpenAI(
             model=LLM_MODEL,
@@ -37,7 +54,7 @@ def news_analyst_node(state: dict) -> dict:
             SystemMessage(content=NEWS_SYSTEM_PROMPT),
             HumanMessage(content=(
                 f"코인: {coin_code}\n\n"
-                f"뉴스 검색 결과:\n{news_data}\n\n"
+                f"뉴스 검색 결과:\n{result.model_dump_json(include={'articles'}, ensure_ascii=False)}\n\n"
                 f"앙상블 지표:\n{state.get('indicator_details', 'N/A')}"
             )),
         ])
@@ -45,11 +62,6 @@ def news_analyst_node(state: dict) -> dict:
         return {"news_analysis": evidence.model_dump_json(ensure_ascii=False)}
 
     except Exception as e:
-        logger.error("News node 실패: %s", e)
-        fallback = NewsEvidence(
-            headlines=[f"[ERROR] 뉴스 검색 실패: {e}"],
-            sentiment="NEUTRAL",
-            relevance_score=0.0,
-            source_quality="unknown",
-        )
-        return {"news_analysis": fallback.model_dump_json(ensure_ascii=False)}
+        # 예외 메시지에는 외부 응답 원문이 섞일 수 있어 클래스 이름만 남기고 결과에도 넣지 않는다.
+        logger.error("News node 실패: %s", type(e).__name__)
+        return {"news_analysis": _neutral_evidence(["[ERROR] 뉴스 분석 실패"]).model_dump_json(ensure_ascii=False)}

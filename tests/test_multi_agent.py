@@ -1,13 +1,23 @@
 """Tests for the structured LLM analysis workflow."""
 
 import json
+import logging
 from unittest.mock import patch, MagicMock
+
+import pytest
 
 from src.agent.market_agent import market_analyst_node
 from src.agent.news_agent import news_analyst_node
+from src.agent.prompts import NEWS_SYSTEM_PROMPT
 from src.agent.report_agent import report_writer_node
 from src.agent.graph import build_analysis_workflow, _format_indicator_details, SupervisorState
-from src.agent.schemas import MarketEvidence, NewsEvidence, IncidentAssessment
+from src.agent.schemas import (
+    IncidentAssessment,
+    MarketEvidence,
+    NewsArticle,
+    NewsEvidence,
+    NewsSearchResult,
+)
 
 
 def _base_state():
@@ -101,11 +111,32 @@ class TestMarketAnalystNode:
         assert "실패" in evidence.claim
 
 
+NEWS_ARTICLE = NewsArticle(
+    title="BTC ETF 승인 임박 보도",
+    url="https://news.example.com/etf?id=1&lang=한글",
+    source="CoinDesk",
+)
+NEWS_OK = NewsSearchResult(
+    status="ok",
+    articles=[NEWS_ARTICLE],
+    attempts=[
+        {"provider": "cryptopanic", "status": "unavailable"},
+        {"provider": "serpapi", "status": "ok"},
+    ],
+)
+
+
+def _human_message(mock_llm) -> str:
+    """structured LLM 에 전달된 HumanMessage 본문."""
+    messages = mock_llm.with_structured_output.return_value.invoke.call_args.args[0]
+    return messages[1].content
+
+
 class TestNewsAnalystNode:
     @patch("src.agent.news_agent.ChatOpenAI")
     @patch("src.agent.news_agent.search_news")
     def test_success(self, mock_tool, mock_llm_cls):
-        mock_tool.invoke.return_value = "BTC 관련 뉴스 3건"
+        mock_tool.invoke.return_value = NEWS_OK
         mock_llm = _structured_llm_mock(MOCK_NEWS_OBJ)
         mock_llm_cls.return_value = mock_llm
 
@@ -115,14 +146,65 @@ class TestNewsAnalystNode:
         evidence = NewsEvidence.model_validate_json(result["news_analysis"])
         assert evidence.sentiment == "BULLISH"
 
+    @patch("src.agent.news_agent.ChatOpenAI")
+    @patch("src.agent.news_agent.search_news")
+    def test_llm_input_is_article_json_with_url(self, mock_tool, mock_llm_cls):
+        mock_tool.invoke.return_value = NEWS_OK
+        mock_llm = _structured_llm_mock(MOCK_NEWS_OBJ)
+        mock_llm_cls.return_value = mock_llm
+
+        news_analyst_node(_base_state())
+        human = _human_message(mock_llm)
+        news_json = human.split("뉴스 검색 결과:\n", 1)[1].split("\n\n앙상블 지표:", 1)[0]
+        # 상태·시도 이력은 넣지 않고 기사 목록만, URL 은 원래 문자열 그대로
+        assert json.loads(news_json) == {"articles": [NEWS_ARTICLE.model_dump()]}
+        assert NEWS_ARTICLE.url in human  # ensure_ascii=False — 한글이 이스케이프되지 않음
+        assert "zscore: 5.2" in human  # 앙상블 지표 입력은 기존과 같다
+
+    @pytest.mark.parametrize("status, attempt, headlines", [
+        ("error", {"provider": "serpapi", "status": "error", "error_code": "timeout"}, ["[ERROR] 뉴스 조회 실패"]),
+        ("empty", {"provider": "serpapi", "status": "empty"}, []),
+        ("unavailable", {"provider": "serpapi", "status": "unavailable"}, []),
+    ])
+    def test_no_articles_skips_llm(self, status, attempt, headlines):
+        with patch("src.agent.news_agent.search_news") as mock_tool, \
+             patch("src.agent.news_agent.ChatOpenAI") as mock_llm_cls:
+            mock_tool.invoke.return_value = NewsSearchResult(status=status, attempts=[attempt])
+            result = news_analyst_node(_base_state())
+
+        mock_llm_cls.assert_not_called()
+        evidence = NewsEvidence.model_validate_json(result["news_analysis"])
+        assert evidence.headlines == headlines
+        assert (evidence.sentiment, evidence.relevance_score, evidence.source_quality) == (
+            "NEUTRAL", 0.0, "unknown",
+        )
+
     @patch("src.agent.news_agent.search_news")
     def test_tool_failure(self, mock_tool):
-        mock_tool.invoke.side_effect = Exception("API timeout")
+        mock_tool.invoke.side_effect = Exception("API timeout url=/search.json?api_key=SECRET")
 
         result = news_analyst_node(_base_state())
         evidence = NewsEvidence.model_validate_json(result["news_analysis"])
         assert evidence.sentiment == "NEUTRAL"
         assert evidence.relevance_score == 0.0
+        assert evidence.headlines == ["[ERROR] 뉴스 분석 실패"]
+        assert "SECRET" not in result["news_analysis"]
+
+    def test_llm_failure_hides_exception_text(self, caplog):
+        with patch("src.agent.news_agent.search_news") as mock_tool, \
+             patch("src.agent.news_agent.ChatOpenAI", side_effect=Exception("upstream said: sk-SECRET")):
+            mock_tool.invoke.return_value = NEWS_OK
+            with caplog.at_level(logging.INFO):
+                result = news_analyst_node(_base_state())
+
+        evidence = NewsEvidence.model_validate_json(result["news_analysis"])
+        assert evidence.headlines == ["[ERROR] 뉴스 분석 실패"]
+        assert "sk-SECRET" not in result["news_analysis"]
+        assert "sk-SECRET" not in caplog.text
+
+    def test_prompt_describes_json_input_without_no_news_rule(self):
+        assert "articles" in NEWS_SYSTEM_PROMPT and "url" in NEWS_SYSTEM_PROMPT
+        assert "뉴스가 없으면" not in NEWS_SYSTEM_PROMPT  # 기사 0건은 코드가 처리한다
 
 
 class TestReportWriterNode:
