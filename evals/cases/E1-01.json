@@ -1,0 +1,77 @@
+{
+  "id": "E1-01",
+  "set_version": "e1-v1",
+  "difficulty": "L1",
+  "note": "유동성 충분, 60분 +17% 급등",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "TRAC",
+    "asof": "2026-10-01T01:39:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 60,
+    "built_at": "2026-10-07T01:20:11+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "TRAC",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.8,
+      "severity": "high",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-01",
+    "indicator_details": "  - zscore: 5.47 [⚠️ 이상] (price_zscore=3.89, volume_zscore=5.47, current_price=709.0, avg_price=562.08, current_volume=662726.7667618808, avg_volume=54213.71, anomaly_type=volume_surge)\n  - bollinger_bands: 1.4891 [⚠️ 이상] (upper_band=672.15, lower_band=596.79, bandwidth=0.1188, percent_b=1.4891, ma=634.47)\n  - rsi: 70.16 [✅ 정상] (rsi_value=70.16, avg_gain=3.067797, avg_loss=1.305085, condition=normal)\n  - vwap: 0.1766 [⚠️ 이상] (vwap_value=602.57, deviation_pct=0.1766, cumulative_volume=30793385.82, current_price=709.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[TRAC] 최근 60분 요약\n- 현재가: 709 / 시가: 604\n- 변동률: +17.38%\n- 고가: 709 / 저가: 600\n- 총 거래량: 8,958,778.1809\n- 총 거래 수: 5,599\n- 데이터 포인트: 60개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "TRAC 보유 주소 2만7060개…하루 새 60개 증가",
+          "url": "https://www.tokenpost.kr/news/cryptocurrency/417352",
+          "source": "토큰포스트"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "TRAC 보유 주소 2만7060개…하루 새 60개 증가",
+        "date": "4 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ESCALATE",
+    "news_relevant": false,
+    "rationale": "60분 +17.38%·거래 5,599건으로 유동성 충분한 급등(기준 ≥5%). 기사 1건은 보유 주소 60개 증가로 급등 원인을 설명하지 못함",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

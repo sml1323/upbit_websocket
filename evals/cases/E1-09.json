@@ -1,0 +1,48 @@
+{
+  "id": "E1-09",
+  "set_version": "e1-v1",
+  "difficulty": "L3",
+  "note": "VWAP 하나만 발동(뉴스 노드 생략), 60분 거래 7건",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "SENT",
+    "asof": "2026-10-03T13:23:00+00:00",
+    "pipeline_btc_rows_60m": 52,
+    "market_rows_60m": 2,
+    "built_at": "2026-10-07T01:20:38+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "SENT",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 1.0,
+      "severity": "low",
+      "firing_indicators": [
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-09",
+    "indicator_details": "  - zscore: 데이터 부족 (skip)\n  - bollinger_bands: 데이터 부족 (skip)\n  - rsi: 데이터 부족 (skip)\n  - vwap: 0.0223 [⚠️ 이상] (vwap_value=29.54, deviation_pct=0.0223, cumulative_volume=1901974.87, current_price=30.2)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[SENT] 최근 60분 요약\n- 현재가: 30 / 시가: 30\n- 변동률: +1.68%\n- 고가: 30 / 저가: 30\n- 총 거래량: 141,132.9950\n- 총 거래 수: 7\n- 데이터 포인트: 2개 (1분 단위)",
+    "news": null
+  },
+  "reference": {
+    "news_dates": []
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "MONITOR",
+    "news_relevant": null,
+    "rationale": "데이터 포인트 2개·거래 7건으로 근거 부족(저유동성). VWAP 하나만 발동해 뉴스 노드를 거치지 않음",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

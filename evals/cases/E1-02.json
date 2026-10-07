@@ -1,0 +1,66 @@
+{
+  "id": "E1-02",
+  "set_version": "e1-v1",
+  "difficulty": "L1",
+  "note": "유동성 충분, 60분 -9% 급락",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "SOON",
+    "asof": "2026-09-30T01:58:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 60,
+    "built_at": "2026-10-07T01:20:21+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "SOON",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.8,
+      "severity": "high",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-02",
+    "indicator_details": "  - zscore: 6.34 [⚠️ 이상] (price_zscore=1.15, volume_zscore=6.34, current_price=529.0, avg_price=460.06, current_volume=1648390.7433132797, avg_volume=143504.74, anomaly_type=volume_surge)\n  - bollinger_bands: -0.3157 [⚠️ 이상] (upper_band=585.13, lower_band=542.47, bandwidth=0.0757, percent_b=-0.3157, ma=563.8)\n  - rsi: 35.15 [✅ 정상] (rsi_value=35.15, avg_gain=0.983051, avg_loss=1.813559, condition=normal)\n  - vwap: 0.0708 [⚠️ 이상] (vwap_value=494.04, deviation_pct=0.0708, cumulative_volume=99448787.87, current_price=529.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[SOON] 최근 60분 요약\n- 현재가: 529 / 시가: 581\n- 변동률: -8.95%\n- 고가: 585 / 저가: 525\n- 총 거래량: 11,297,254.8276\n- 총 거래 수: 2,865\n- 데이터 포인트: 60개 (1분 단위)",
+    "news": {
+      "status": "error",
+      "articles": [],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "error",
+          "error_code": "timeout"
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": []
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ESCALATE",
+    "news_relevant": null,
+    "rationale": "60분 -8.95%·거래 2,865건 급락(≥5%). 뉴스 조회 실패(error)라 뉴스 관련성은 채점 제외. 시장 근거만으로 판단해야 하는 사례",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

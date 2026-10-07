@@ -1,0 +1,132 @@
+{
+  "id": "E1-05",
+  "set_version": "e1-v1",
+  "difficulty": "L2",
+  "note": "대형 코인, 변동 +2.3%",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "DOGE",
+    "asof": "2026-10-02T04:55:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 59,
+    "built_at": "2026-10-07T01:20:33+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "DOGE",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.5,
+      "severity": "medium",
+      "firing_indicators": [
+        "bollinger_bands",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-05",
+    "indicator_details": "  - zscore: 2.69 [✅ 정상] (price_zscore=2.69, volume_zscore=1.48, current_price=132.0, avg_price=129.13, current_volume=1075427.0518503303, avg_volume=170095.66, anomaly_type=price_spike)\n  - bollinger_bands: 1.0046 [⚠️ 이상] (upper_band=131.98, lower_band=127.42, bandwidth=0.0351, percent_b=1.0046, ma=129.7)\n  - rsi: 60.0 [✅ 정상] (rsi_value=60.0, avg_gain=0.20339, avg_loss=0.135593, condition=normal)\n  - vwap: 0.0211 [⚠️ 이상] (vwap_value=129.27, deviation_pct=0.0211, cumulative_volume=94062899.72, current_price=132.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[DOGE] 최근 60분 요약\n- 현재가: 132 / 시가: 129\n- 변동률: +2.33%\n- 고가: 132 / 저가: 128\n- 총 거래량: 41,174,918.0013\n- 총 거래 수: 1,079\n- 데이터 포인트: 59개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "머스크 \"도지코인으로 테슬라 상품 결제\" 밝혀",
+          "url": "https://chosundaily.com/bbs/board.php?bo_table=hotclick&wr_id=4422&sca=%EA%B2%BD%EC%A0%9C&sst=wr_hit&sod=desc&sop=and&spt=-8682&page=87&device=pc",
+          "source": "미주조선일보"
+        },
+        {
+          "title": "비트코인 8만 6,000달러 훈풍 탄 도지코인, 0.10달러 저항선 뚫고 폭등할까",
+          "url": "https://www.coinreaders.com/261399",
+          "source": "코인리더스"
+        },
+        {
+          "title": "[D-BIZ 암호화폐 뉴스] 도지코인, DeFi 테스트넷 출시…\"투기 넘어 실용 생태계 구축\"",
+          "url": "https://www.dailybizon.com/news/articleView.html?idxno=71063",
+          "source": "데일리비즈온"
+        },
+        {
+          "title": "12년 만에 ‘앱 레이어’ 생기는 도지코인…DogeOS 퍼블릭 테스트넷 가동",
+          "url": "https://yellow.com/ko/news/12%EB%85%84-%EB%A7%8C%EC%97%90-%EC%B2%AB-%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%A0%88%EC%9D%B4%EC%96%B4%E2%80%A6%EB%8F%84%EC%A7%80%EC%BD%94%EC%9D%B8-dogeos%EB%A1%9C-evm-%EC%83%9D%ED%83%9C%EA%B3%84-%EC%97%B0%EB%8B%A4",
+          "source": "Yellow.com"
+        },
+        {
+          "title": "도지코인, 스마트 컨트랙트 시대 연다…브리지·실사용이 관건",
+          "url": "https://www.bonmedia.kr/news/articleView.html?idxno=8567",
+          "source": "비온미디어"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "머스크 \"도지코인으로 테슬라 상품 결제\" 밝혀",
+        "date": "4 days ago"
+      },
+      {
+        "title": "비트코인 8만 6,000달러 훈풍 탄 도지코인, 0.10달러 저항선 뚫고 폭등할까",
+        "date": "4 days ago"
+      },
+      {
+        "title": "[D-BIZ 암호화폐 뉴스] 도지코인, DeFi 테스트넷 출시…\"투기 넘어 실용 생태계 구축\"",
+        "date": "5 days ago"
+      },
+      {
+        "title": "12년 만에 ‘앱 레이어’ 생기는 도지코인…DogeOS 퍼블릭 테스트넷 가동",
+        "date": "5 days ago"
+      },
+      {
+        "title": "도지코인, 스마트 컨트랙트 시대 연다…브리지·실사용이 관건",
+        "date": "4 days ago"
+      },
+      {
+        "title": "도지OS 테스트넷 출시…도지코인 활용성 확대 시동",
+        "date": "5 days ago"
+      },
+      {
+        "title": "시티은행, 비트코인 목표가 11만 3천 달러로 상향…기관 수요가 관건",
+        "date": "5 days ago"
+      },
+      {
+        "title": "Dogecoin's New App Network Is Live. Why the DOGE Price Isn't Reacting",
+        "date": "5 days ago"
+      },
+      {
+        "title": "트위터 로고 파랑새 →시바견 교체?",
+        "date": "4 days ago"
+      },
+      {
+        "title": "RWA 코인 전망, 한국 금융시장과 접점 확대…토큰증권·온도파이낸스 주목",
+        "date": "4 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ALERT",
+    "news_relevant": true,
+    "rationale": "60분 +2.33%·거래 1,079건(1~5%). 제목상 DogeOS 테스트넷·머스크 결제 언급 등 상승 촉매 후보가 있어 관련 있음으로 둠(약한 근거, 기사 시각 미확인)",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

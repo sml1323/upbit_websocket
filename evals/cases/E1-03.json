@@ -1,0 +1,132 @@
+{
+  "id": "E1-03",
+  "set_version": "e1-v1",
+  "difficulty": "L1",
+  "note": "대형 코인, 변동 -0.4% 인데 지표 2개 발동",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "BTC",
+    "asof": "2026-09-29T14:06:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 60,
+    "built_at": "2026-10-07T01:20:22+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "BTC",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.55,
+      "severity": "medium",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands"
+      ]
+    },
+    "incident_id": "E1-03",
+    "indicator_details": "  - zscore: 13.79 [⚠️ 이상] (price_zscore=0.12, volume_zscore=13.79, current_price=113434000.0, avg_price=113375663.77, current_volume=12.832248630000004, avg_volume=0.57, anomaly_type=volume_surge)\n  - bollinger_bands: -0.1136 [⚠️ 이상] (upper_band=114261989.71, lower_band=113518443.62, bandwidth=0.0065, percent_b=-0.1136, ma=113890216.67)\n  - rsi: 40.14 [✅ 정상] (rsi_value=40.14, avg_gain=16898.305085, avg_loss=25203.389831, condition=normal)\n  - vwap: 0.0002 [✅ 정상] (vwap_value=113405761.74, deviation_pct=0.0002, cumulative_volume=458.7, current_price=113434000.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[BTC] 최근 60분 요약\n- 현재가: 113,434,000 / 시가: 113,915,000\n- 변동률: -0.42%\n- 고가: 114,200,000 / 저가: 113,428,000\n- 총 거래량: 63.9453\n- 총 거래 수: 4,787\n- 데이터 포인트: 60개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "BTC, ETH 가격 뉴스: 비트코인 강세 지수 90 도달, 강세자들에게 경고 신호",
+          "url": "https://www.coindesk.com/ko/markets/2026/09/30/bitcoin-rally-shows-signs-of-cooling-even-as-a-bull-score-gauge-nears-its-perfect-score",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "\"비트코인, 금과 동조화에도 수익률 앞서…자금 수요 BTC로 이동\"",
+          "url": "https://bloomingbit.io/feed/news/121247",
+          "source": "블루밍비트"
+        },
+        {
+          "title": "비트코인 오르면 ‘숏 스퀴즈’ 터질까···공매도 몰린 암호화폐 주식 3종목",
+          "url": "https://kr.benzinga.com/news/usa/trading/%EB%B9%84%ED%8A%B8%EC%BD%94%EC%9D%B8-%EC%98%A4%EB%A5%B4%EB%A9%B4-%EC%88%8F-%EC%8A%A4%ED%80%B4%EC%A6%88-%ED%84%B0%EC%A7%88%EA%B9%8C%EA%B3%B5%EB%A7%A4%EB%8F%84/",
+          "source": "Benzinga"
+        },
+        {
+          "title": "BTC, ETH 가격 뉴스: ZEC 12% 하락과 유가 상승 속 비트코인 83,000달러로 하락",
+          "url": "https://www.coindesk.com/ko/markets/2026/09/29/bitcoin-holds-usd83-000-as-zec-drops-12-and-oil-climbs-again",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "그레이스케일 \"지캐시(ZEC) 시총, 비트코인(BTC) 대비 1.5%로 확대…프라이버시 수요 주목\"",
+          "url": "https://bloomingbit.io/feed/news/121275",
+          "source": "블루밍비트"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "BTC, ETH 가격 뉴스: 비트코인 강세 지수 90 도달, 강세자들에게 경고 신호",
+        "date": "6 days ago"
+      },
+      {
+        "title": "\"비트코인, 금과 동조화에도 수익률 앞서…자금 수요 BTC로 이동\"",
+        "date": "1 week ago"
+      },
+      {
+        "title": "비트코인 오르면 ‘숏 스퀴즈’ 터질까···공매도 몰린 암호화폐 주식 3종목",
+        "date": "1 week ago"
+      },
+      {
+        "title": "BTC, ETH 가격 뉴스: ZEC 12% 하락과 유가 상승 속 비트코인 83,000달러로 하락",
+        "date": "1 week ago"
+      },
+      {
+        "title": "그레이스케일 \"지캐시(ZEC) 시총, 비트코인(BTC) 대비 1.5%로 확대…프라이버시 수요 주목\"",
+        "date": "1 week ago"
+      },
+      {
+        "title": "비트코인이 금을 능가하다. 이제 $100,000 돌파가 가능할 것으로 보인다: 크립토 데일리",
+        "date": "1 week ago"
+      },
+      {
+        "title": "美 비트코인 현물 ETF, 6620만달러 순유입",
+        "date": "6 days ago"
+      },
+      {
+        "title": "비트코인(BTC) 거래자들은 냉각된 투자심리에도 불구하고 아직 패닉 상태에 빠지지 않았다: 크립토 데일리",
+        "date": "1 week ago"
+      },
+      {
+        "title": "바이낸스 CEO \"미국 국채금리 상승에도 비트코인(BTC) 현물 ETF 9억9900만달러 순유입\"",
+        "date": "1 week ago"
+      },
+      {
+        "title": "비트코인(BTC) 옵션 트레이더, 9만달러 이상 콜옵션 베팅 확대",
+        "date": "1 week ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "MONITOR",
+    "news_relevant": false,
+    "rationale": "60분 -0.42%로 1% 미만. 지표 2개 발동은 24시간 창 대비 민감 반응. 기사 5건은 BTC 일반 시황이며 이 변동을 설명하지 않음",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

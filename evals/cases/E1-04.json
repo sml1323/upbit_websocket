@@ -1,0 +1,132 @@
+{
+  "id": "E1-04",
+  "set_version": "e1-v1",
+  "difficulty": "L2",
+  "note": "대형 코인, 변동 +1.0% 경계값",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "ETH",
+    "asof": "2026-10-02T08:19:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 60,
+    "built_at": "2026-10-07T01:20:46+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "ETH",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.55,
+      "severity": "medium",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands"
+      ]
+    },
+    "incident_id": "E1-04",
+    "indicator_details": "  - zscore: 3.0 [⚠️ 이상] (price_zscore=3.0, volume_zscore=2.4, current_price=3733000.0, avg_price=3690621.95, current_volume=137.95562083000004, avg_volume=23.79, anomaly_type=price_spike)\n  - bollinger_bands: 1.3653 [⚠️ 이상] (upper_band=3718695.6, lower_band=3679537.74, bandwidth=0.0106, percent_b=1.3653, ma=3699116.67)\n  - rsi: 70.33 [✅ 정상] (rsi_value=70.33, avg_gain=1084.745763, avg_loss=457.627119, condition=normal)\n  - vwap: 0.0092 [✅ 정상] (vwap_value=3699146.14, deviation_pct=0.0092, cumulative_volume=13658.18, current_price=3733000.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[ETH] 최근 60분 요약\n- 현재가: 3,733,000 / 시가: 3,695,000\n- 변동률: +1.03%\n- 고가: 3,748,000 / 저가: 3,689,000\n- 총 거래량: 2,027.8452\n- 총 거래 수: 2,140\n- 데이터 포인트: 60개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "BE Stock Price Today",
+          "url": "https://www.coindesk.com/ko/price/stock/be",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "비트코인, 씨티 $8.2만 목표 넘어서…새 목표는?",
+          "url": "https://kr.beincrypto.com/citi-bitcoin-ethereum-price-target-raised/",
+          "source": "BeInCrypto"
+        },
+        {
+          "title": "시티은행, 비트코인 목표가 11만 3천 달러로 상향…기관 수요가 관건",
+          "url": "https://cryptonews.com/kr/news/citi-raises-bitcoin-price-target-to-113000-dollars/",
+          "source": "Cryptonews"
+        },
+        {
+          "title": "비트코인 강세론자들이 방대한 분기를 보냈다. 암호화폐 해커들도 마찬가지였다: 크립토 데일리",
+          "url": "https://www.coindesk.com/ko/daybook-us/2026/10/01/crypto-lost-usd1-26-billion-in-hacks-while-bitcoin-bulls-enjoyed-a-monster-quarter",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "10년 묻어둘 코인은 딱 3개?…비트코인·이더리움·솔라나 주목한 이유",
+          "url": "https://www.coinreaders.com/261450",
+          "source": "코인리더스"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "BE Stock Price Today",
+        "date": "3 days ago"
+      },
+      {
+        "title": "비트코인, 씨티 $8.2만 목표 넘어서…새 목표는?",
+        "date": "4 days ago"
+      },
+      {
+        "title": "시티은행, 비트코인 목표가 11만 3천 달러로 상향…기관 수요가 관건",
+        "date": "5 days ago"
+      },
+      {
+        "title": "비트코인 강세론자들이 방대한 분기를 보냈다. 암호화폐 해커들도 마찬가지였다: 크립토 데일리",
+        "date": "5 days ago"
+      },
+      {
+        "title": "10년 묻어둘 코인은 딱 3개?…비트코인·이더리움·솔라나 주목한 이유",
+        "date": "4 days ago"
+      },
+      {
+        "title": "[D-BIZ 암호화폐 뉴스] 메타마스크 보안 사고…이더리움 검증자 52만 ETH 이탈, 예치 원금은 안전",
+        "date": "5 days ago"
+      },
+      {
+        "title": "니어(NEAR)만 살았다…XRP·ETH 붕괴 직전, 개미들 통곡의 밤",
+        "date": "5 days ago"
+      },
+      {
+        "title": "비트코인, 8만2천 달러에서 8만5천 달러 구간의 기존 가격대에서 새로운 분기 시작",
+        "date": "5 days ago"
+      },
+      {
+        "title": "업토버 시작…이더리움·XRP 투자심리 수개월 최저치",
+        "date": "4 days ago"
+      },
+      {
+        "title": "이더리움(ETH) 생태계 강조한 펌폴린스키…“이번 사이클 1만6000달러” 전망",
+        "date": "4 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ALERT",
+    "news_relevant": false,
+    "rationale": "60분 +1.03%로 경계값(1~5% 구간 하단). 기사는 BTC 목표가·무관 종목(BE) 위주로 ETH 변동과 무관",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

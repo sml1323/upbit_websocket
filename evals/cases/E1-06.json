@@ -1,0 +1,85 @@
+{
+  "id": "E1-06",
+  "set_version": "e1-v1",
+  "difficulty": "L2",
+  "note": "변동 -6.6%·고저폭 17% 인데 지표 2개뿐(규칙상 ALERT)",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "ICX",
+    "asof": "2026-10-01T08:59:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 60,
+    "built_at": "2026-10-07T01:20:35+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "ICX",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 0.5,
+      "severity": "medium",
+      "firing_indicators": [
+        "bollinger_bands",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-06",
+    "indicator_details": "  - zscore: 1.4 [✅ 정상] (price_zscore=1.4, volume_zscore=-0.3, current_price=24.0, avg_price=20.96, current_volume=698454.57073845, avg_volume=1873590.41, anomaly_type=price_spike)\n  - bollinger_bands: -0.0401 [⚠️ 이상] (upper_band=27.79, lower_band=24.15, bandwidth=0.1403, percent_b=-0.0401, ma=25.97)\n  - rsi: 43.97 [✅ 정상] (rsi_value=43.97, avg_gain=0.105085, avg_loss=0.133898, condition=normal)\n  - vwap: 0.0217 [⚠️ 이상] (vwap_value=23.49, deviation_pct=0.0217, cumulative_volume=1019233182.4, current_price=24.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[ICX] 최근 60분 요약\n- 현재가: 24 / 시가: 26\n- 변동률: -6.61%\n- 고가: 28 / 저가: 23\n- 총 거래량: 327,918,673.5318\n- 총 거래 수: 6,468\n- 데이터 포인트: 60개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "[코인브리핑] \"비트코인 10월 오른다\"…올해 통할까",
+          "url": "https://www.asiatime.co.kr/article/20261001500430",
+          "source": "아시아타임즈"
+        },
+        {
+          "title": "[아침코인] 10월 2일 GTC(깃코인) 53%↑ NFT(에이아이앤에프티) 33%↑ 등",
+          "url": "https://www.digitalasset.works/news/articleView.html?idxno=43351",
+          "source": "디지털애셋"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "[코인브리핑] \"비트코인 10월 오른다\"…올해 통할까",
+        "date": "5 days ago"
+      },
+      {
+        "title": "[아침코인] 10월 2일 GTC(깃코인) 53%↑ NFT(에이아이앤에프티) 33%↑ 등",
+        "date": "5 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ESCALATE",
+    "news_relevant": false,
+    "rationale": "60분 -6.61%·고저폭 17%·거래 6,468건(≥5%). 지표는 2개뿐이라 규칙으로는 ALERT. 기사 2건은 다른 코인(GTC·NFT) 시황으로 ICX 하락과 무관",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

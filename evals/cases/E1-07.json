@@ -1,0 +1,105 @@
+{
+  "id": "E1-07",
+  "set_version": "e1-v1",
+  "difficulty": "L2",
+  "note": "지표 4개 전부, 변동 -6.6%",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "SIGN",
+    "asof": "2026-09-29T02:24:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 33,
+    "built_at": "2026-10-07T01:20:36+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "SIGN",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 1.0,
+      "severity": "critical",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands",
+        "rsi",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-07",
+    "indicator_details": "  - zscore: 4.78 [⚠️ 이상] (price_zscore=-3.26, volume_zscore=4.78, current_price=15.5, avg_price=17.29, current_volume=1907401.7410211803, avg_volume=181747.94, anomaly_type=volume_surge)\n  - bollinger_bands: -0.2436 [⚠️ 이상] (upper_band=17.25, lower_band=15.84, bandwidth=0.0852, percent_b=-0.2436, ma=16.55)\n  - rsi: 25.0 [⚠️ 이상] (rsi_value=25.0, avg_gain=0.013559, avg_loss=0.040678, condition=oversold)\n  - vwap: -0.0947 [⚠️ 이상] (vwap_value=17.12, deviation_pct=-0.0947, cumulative_volume=51798163.36, current_price=15.5)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[SIGN] 최근 60분 요약\n- 현재가: 16 / 시가: 17\n- 변동률: -6.63%\n- 고가: 17 / 저가: 16\n- 총 거래량: 12,280,254.8856\n- 총 거래 수: 154\n- 데이터 포인트: 33개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "BTC, ETH 가격 뉴스: 비트코인 강세 지수 90 도달, 강세자들에게 경고 신호",
+          "url": "https://www.coindesk.com/ko/markets/2026/09/30/bitcoin-rally-shows-signs-of-cooling-even-as-a-bull-score-gauge-nears-its-perfect-score",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "Xifei discount code: GET10 / 10% 암호화폐 포트폴리오 선택 팔로우하기 | 코인마켓캡",
+          "url": "https://coinmarketcap.com/ko/watchlist/6a9e6ee2c7aeb8287f533c59/",
+          "source": "CoinMarketCap"
+        },
+        {
+          "title": "THORChain rejects Bitget request to block hacker as $6 million moves to bitcoin",
+          "url": "https://www.coindesk.com/tech/2026/09/28/thorchain-rejects-bitget-request-to-block-hacker-as-usd6-million-moves-to-bitcoin",
+          "source": "CoinDesk"
+        },
+        {
+          "title": "지정학적 리스크 직면한 비트코인, 8만 7천 달러 돌파 가능할까",
+          "url": "https://www.coinspeaker.com/kr/bitcoin-price-forecast-geopolitical-risk-87k-target/",
+          "source": "Coinspeaker"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "BTC, ETH 가격 뉴스: 비트코인 강세 지수 90 도달, 강세자들에게 경고 신호",
+        "date": "6 days ago"
+      },
+      {
+        "title": "Xifei discount code: GET10 / 10% 암호화폐 포트폴리오 선택 팔로우하기 | 코인마켓캡",
+        "date": "6 days ago"
+      },
+      {
+        "title": "THORChain rejects Bitget request to block hacker as $6 million moves to bitcoin",
+        "date": "1 week ago"
+      },
+      {
+        "title": "지정학적 리스크 직면한 비트코인, 8만 7천 달러 돌파 가능할까",
+        "date": "1 week ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ESCALATE",
+    "news_relevant": false,
+    "rationale": "60분 -6.63%(≥5%), 거래 154건·데이터 33개로 근거 부족 기준(30 미만)은 넘음. 기사는 BTC 일반·할인코드·다른 해킹 건으로 무관",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

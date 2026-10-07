@@ -1,0 +1,78 @@
+{
+  "id": "E1-10",
+  "set_version": "e1-v1",
+  "difficulty": "L3",
+  "note": "지표 4개 전부, 변동 +3.9%(규칙상 ESCALATE)",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "LIT",
+    "asof": "2026-10-03T17:34:00+00:00",
+    "pipeline_btc_rows_60m": 60,
+    "market_rows_60m": 51,
+    "built_at": "2026-10-07T01:20:39+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "LIT",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 1.0,
+      "severity": "critical",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands",
+        "rsi",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-10",
+    "indicator_details": "  - zscore: 5.79 [⚠️ 이상] (price_zscore=3.84, volume_zscore=5.79, current_price=5015.0, avg_price=4808.86, current_volume=7038.9192358599985, avg_volume=504.79, anomaly_type=volume_surge)\n  - bollinger_bands: 1.1876 [⚠️ 이상] (upper_band=4976.39, lower_band=4770.58, bandwidth=0.0422, percent_b=1.1876, ma=4873.48)\n  - rsi: 82.86 [⚠️ 이상] (rsi_value=82.86, avg_gain=5.491525, avg_loss=1.135593, condition=overbought)\n  - vwap: 0.0388 [⚠️ 이상] (vwap_value=4827.74, deviation_pct=0.0388, cumulative_volume=132759.78, current_price=5015.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[LIT] 최근 60분 요약\n- 현재가: 5,015 / 시가: 4,828\n- 변동률: +3.87%\n- 고가: 5,015 / 저가: 4,823\n- 총 거래량: 36,595.6906\n- 총 거래 수: 370\n- 데이터 포인트: 51개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "LIT 가격 오늘 12.10% 상승하며 0.15달러 돌파",
+          "url": "https://coinfomania.com/ko/lit-jumps-past-0-15-as-price-soars-12-10-ko/",
+          "source": "Coinfomania"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "LIT 가격 오늘 12.10% 상승하며 0.15달러 돌파",
+        "date": "2 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "ALERT",
+    "news_relevant": false,
+    "rationale": "60분 +3.87%·거래 370건(1~5%). 지표 4개라 규칙으로는 ESCALATE. 기사는 '0.15달러 돌파'인데 현재가 5,015원(약 3.6달러)이라 같은 티커의 다른 코인",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}

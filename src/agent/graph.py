@@ -90,15 +90,11 @@ def _format_indicator_details(result: EnsembleResult) -> str:
     return "\n".join(lines)
 
 
-def analyze_anomaly(result, incident_id: str) -> str | None:
-    """이상 징후를 멀티 에이전트로 분석하고 리포트를 생성.
+def build_initial_state(result, incident_id: str) -> SupervisorState:
+    """감지 결과를 워크플로 초기 상태로 바꾼다. 평가 사례(evals/)도 같은 경로로 만든다.
 
     result: EnsembleResult (정상 경로) 또는 Anomaly (replay 경로) 둘 다 지원.
     """
-    if not OPENAI_API_KEY:
-        logger.warning("OPENAI_API_KEY가 설정되지 않음. LLM 분석 스킵.")
-        return None
-
     # EnsembleResult vs legacy Anomaly 호환
     if isinstance(result, EnsembleResult):
         firing = [s.indicator_name for s in result.signals if s.is_anomaly]
@@ -132,6 +128,19 @@ def analyze_anomaly(result, incident_id: str) -> str | None:
             "news_analysis": "",
             "final_report": "",
         }
+    return initial_state
+
+
+def analyze_anomaly(result, incident_id: str) -> str | None:
+    """이상 징후를 멀티 에이전트로 분석하고 리포트를 생성.
+
+    result: EnsembleResult (정상 경로) 또는 Anomaly (replay 경로) 둘 다 지원.
+    """
+    if not OPENAI_API_KEY:
+        logger.warning("OPENAI_API_KEY가 설정되지 않음. LLM 분석 스킵.")
+        return None
+
+    initial_state = build_initial_state(result, incident_id)
 
     try:
         app = build_analysis_workflow()

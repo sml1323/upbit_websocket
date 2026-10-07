@@ -1,0 +1,134 @@
+{
+  "id": "E1-08",
+  "set_version": "e1-v1",
+  "difficulty": "L3",
+  "note": "수집 공백 직후 지표 4개 전부, 60분 거래 5건",
+  "source": {
+    "method": "backfill-detector",
+    "coin_code": "XRP",
+    "asof": "2026-10-02T19:22:00+00:00",
+    "pipeline_btc_rows_60m": 1,
+    "market_rows_60m": 1,
+    "built_at": "2026-10-07T01:20:38+00:00"
+  },
+  "state": {
+    "anomaly": {
+      "coin_code": "XRP",
+      "anomaly_type": "ensemble",
+      "ensemble_score": 1.0,
+      "severity": "critical",
+      "firing_indicators": [
+        "zscore",
+        "bollinger_bands",
+        "rsi",
+        "vwap"
+      ]
+    },
+    "incident_id": "E1-08",
+    "indicator_details": "  - zscore: -3.65 [⚠️ 이상] (price_zscore=-3.65, volume_zscore=-0.73, current_price=1999.0, avg_price=2052.7, current_volume=4759.096737329999, avg_volume=70831.53, anomaly_type=price_spike)\n  - bollinger_bands: -0.6037 [⚠️ 이상] (upper_band=2099.98, lower_band=2037.02, bandwidth=0.0304, percent_b=-0.6037, ma=2068.5)\n  - rsi: 23.31 [⚠️ 이상] (rsi_value=23.31, avg_gain=0.525424, avg_loss=1.728814, condition=oversold)\n  - vwap: -0.0291 [⚠️ 이상] (vwap_value=2058.84, deviation_pct=-0.0291, cumulative_volume=38036533.04, current_price=1999.0)",
+    "market_analysis": "",
+    "news_analysis": "",
+    "final_report": ""
+  },
+  "snapshots": {
+    "market": "[XRP] 최근 60분 요약\n- 현재가: 1,999 / 시가: 1,999\n- 변동률: +0.00%\n- 고가: 2,000 / 저가: 1,999\n- 총 거래량: 4,759.0967\n- 총 거래 수: 5\n- 데이터 포인트: 1개 (1분 단위)",
+    "news": {
+      "status": "ok",
+      "articles": [
+        {
+          "title": "수이·헤데라는 뛰는데 왜?…리플(XRP), 1.48달러로 밀려난 진짜 배경은",
+          "url": "https://www.coinreaders.com/261481",
+          "source": "코인리더스"
+        },
+        {
+          "title": "\"10월 코인 왕좌는 누구?\"… AI 모델들, XRP vs 솔라나 끝장 승부 지목",
+          "url": "https://www.g-enews.com/article/Securities/2026/10/20261003145429826e250e8e188_1",
+          "source": "글로벌이코노믹"
+        },
+        {
+          "title": "2026년, 2027년, 2028~2030년 및 향후 XRP(리플) 가격 예측·전망",
+          "url": "https://www.litefinance.org/ko/blog/analysts-opinions/lipeul-gagyeog-jeonmang-yecheug/",
+          "source": "LiteFinance"
+        },
+        {
+          "title": "코인거래 44.3% 급감…리플XRP 729억, 샌드박스 2285억",
+          "url": "https://www.topstarnews.net/news/articleView.html?idxno=16237555",
+          "source": "TopStarNews"
+        },
+        {
+          "title": "XRP, 일주일 새 45% 급등·활성 지갑 650% 폭증…그러나 ‘10달러 서포트’는 아직",
+          "url": "https://yellow.com/ko/news/xrp-%EC%9D%BC%EC%A3%BC%EC%9D%BC-%EC%83%88-45-%EA%B8%89%EB%93%B1%C2%B7%ED%99%9C%EC%84%B1-%EC%A7%80%EA%B0%91-650-%ED%8F%AD%EC%A6%9D%E2%80%A6%EA%B7%B8%EB%9F%AC%EB%82%98-%E2%80%9810%EB%8B%AC%EB%9F%AC-%EC%84%9C%ED%8F%AC%ED%8A%B8%E2%80%99%EB%8A%94-%EC%95%84%EC%A7%81",
+          "source": "Yellow.com"
+        }
+      ],
+      "attempts": [
+        {
+          "provider": "cryptopanic",
+          "status": "unavailable",
+          "error_code": null
+        },
+        {
+          "provider": "serpapi",
+          "status": "ok",
+          "error_code": null
+        }
+      ]
+    }
+  },
+  "reference": {
+    "news_dates": [
+      {
+        "title": "수이·헤데라는 뛰는데 왜?…리플(XRP), 1.48달러로 밀려난 진짜 배경은",
+        "date": "3 days ago"
+      },
+      {
+        "title": "\"10월 코인 왕좌는 누구?\"… AI 모델들, XRP vs 솔라나 끝장 승부 지목",
+        "date": "3 days ago"
+      },
+      {
+        "title": "2026년, 2027년, 2028~2030년 및 향후 XRP(리플) 가격 예측·전망",
+        "date": "4 days ago"
+      },
+      {
+        "title": "코인거래 44.3% 급감…리플XRP 729억, 샌드박스 2285억",
+        "date": "3 days ago"
+      },
+      {
+        "title": "XRP, 일주일 새 45% 급등·활성 지갑 650% 폭증…그러나 ‘10달러 서포트’는 아직",
+        "date": "3 days ago"
+      },
+      {
+        "title": "리플(XRP), 장기 차트가 가리킨 시세 전망은?",
+        "date": "3 days ago"
+      },
+      {
+        "title": "비트겟 해킹 업데이트…XRP, 비트코인, 북한 연관성",
+        "date": "3 days ago"
+      },
+      {
+        "title": "[XRP/USDT] 시세 급하락 (바이낸스)",
+        "date": "4 days ago"
+      },
+      {
+        "title": "'최대 XRP DAT' 에버노스 “XRP 굴려 운용수익 낸다, 규제 열리면 韓 진출”",
+        "date": "2 days ago"
+      },
+      {
+        "title": "2026년 암호화폐 순위: 가장 추천하는 암호화폐는 무엇인가?",
+        "date": "4 days ago"
+      }
+    ]
+  },
+  "label": {
+    "expected_nodes": [
+      "market_analyst",
+      "news_analyst",
+      "report_writer"
+    ],
+    "recommended_action": "MONITOR",
+    "news_relevant": false,
+    "rationale": "데이터 포인트 1개·거래 5건 — 수집 공백 직후라 판단 근거 부족. 지표 4개 발동은 공백 때문이며 규칙으로는 ESCALATE. 기사는 XRP 일반 시황",
+    "status": "confirmed",
+    "confirmed_at": "2026-10-07"
+  }
+}
