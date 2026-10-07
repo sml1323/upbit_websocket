@@ -82,7 +82,7 @@ docker compose up -d
 | AI Analysis | LangGraph conditional DAG, OpenAI Structured Outputs (Pydantic) |
 | Alert | Telegram Bot, KakaoTalk |
 | API / Dashboard | FastAPI, Grafana |
-| Infra / Test | Docker Compose, pytest (110 tests) |
+| Infra / Test | Docker Compose, pytest (204 tests) |
 
 ## API Endpoints
 
@@ -157,8 +157,8 @@ src/
 ## Testing
 
 ```bash
-pip install -r requirements.txt
-python3 -m pytest tests/ -v    # 110 passed
+uv sync                       # pyproject.toml + uv.lock 기준으로 설치 (테스트 도구 포함)
+uv run pytest tests/ -v       # 204 passed
 ```
 
 ## Docs

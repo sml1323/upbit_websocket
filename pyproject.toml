@@ -1,0 +1,31 @@
+[project]
+name = "upbit-websocket"
+version = "0.1.0"
+description = "Coin Anomaly Agent — 업비트 실시간 WebSocket 파이프라인, 4개 지표 이상감지, 구조화 LLM 워크플로우 원인 분석"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "apscheduler>=3.10.0",
+    "confluent-kafka>=2.8.0",
+    "fastapi>=0.115.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langgraph>=0.2.0",
+    "pandas>=2.0.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.0",
+    "uvicorn>=0.30.0",
+    "websockets>=14.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+# 경로 없이 pytest 를 실행해도 tests/ 만 수집한다 — scratch/ 의 실험 파일은 import 만으로 실제 OpenAI 를 호출한다.
+testpaths = ["tests"]
