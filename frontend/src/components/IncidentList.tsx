@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import NumberFlow from '@number-flow/react'
 import clsx from 'clsx'
 import type { IncidentSummary } from '../api'
-import { ACT_KO, ACTIONS, IND, INDICATORS, SEV_KO, SEVERITIES, isSkipped, pct, relTime } from '../format'
+import { ACT_KO, ACTIONS, SEV_KO, SEVERITIES, isSkipped, pct, relTime } from '../format'
 import { type Filters, filterKey, isFiltering, toggle } from '../filters'
 import { Tip } from './Tip'
 
@@ -23,16 +23,22 @@ interface Props {
   onIncludeSkipped: (v: boolean) => void
 }
 
-const EASE_OUT = [0.23, 1, 0.32, 1] as const
+const EASE_OUT = [0.2, 0, 0, 1] as const
 
 export function IncidentList(props: Props) {
   const { all, visible, selectedId, onSelect, filters, onFilters, freshIds, now, live, searchRef } = props
   const { skippedCount, includeSkipped, onIncludeSkipped } = props
   const listRef = useRef<HTMLUListElement>(null)
 
-  // 키보드로 선택이 바뀌면 보이는 곳까지만 스크롤
+  // 키보드로 선택이 바뀌면 보이는 곳까지만 스크롤. sticky 머리(.list-head) 밑에 숨지 않게 그만큼 더 올린다
   useEffect(() => {
-    listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
+    const el = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')
+    const scroller = listRef.current?.parentElement
+    if (!el || !scroller) return
+    el.scrollIntoView({ block: 'nearest' })
+    const headBottom = scroller.querySelector('.list-head')?.getBoundingClientRect().bottom ?? 0
+    const top = el.getBoundingClientRect().top
+    if (top < headBottom) scroller.scrollTop -= headBottom - top
   }, [selectedId])
 
   const counts = (key: 'severity' | 'recommended_action', value: string) => all.filter((i) => i[key] === value).length
@@ -140,34 +146,25 @@ export function IncidentList(props: Props) {
                   aria-selected={i.incident_id === selectedId}
                   onClick={() => onSelect(i.incident_id)}
                 >
-                  <span className="stripe" />
                   <span className="item-main">
                     <span className="item-top">
                       <strong>{i.coin_code}</strong>
                       <span className="sev-text">{SEV_KO[i.severity]}</span>
                       {freshIds.has(i.incident_id) && <span className="new">NEW</span>}
                     </span>
+                    {/* 두 번째 줄: 조치 · 신뢰도 · 원인 한 줄 미리보기. 지표 배지 대신 결론이 먼저 */}
                     <span className="item-sub">
                       {i.recommended_action ? (
                         <>
-                          <span className={clsx('act-text', `act-${i.recommended_action}`)}>{ACT_KO[i.recommended_action]}</span>
+                          <span className="act-text">{ACT_KO[i.recommended_action]}</span>
                           {i.confidence !== null && <> · 신뢰도 {pct(i.confidence)}</>}
+                          {i.root_cause && <> · {i.root_cause}</>}
                         </>
                       ) : isSkipped(i) ? (
-                        <span>분석 생략</span>
+                        '분석 생략'
                       ) : (
-                        <span className="pending">
-                          <i className="pulse" />
-                          분석 중
-                        </span>
+                        '분석 대기 중'
                       )}
-                    </span>
-                    <span className="inds" aria-label="발화 지표">
-                      {INDICATORS.map((k) => (
-                        <span key={k} className="ind" data-on={i.firing_indicators.includes(k) || undefined} title={IND[k].ko}>
-                          {IND[k].short}
-                        </span>
-                      ))}
                     </span>
                   </span>
                   <span className="item-right">

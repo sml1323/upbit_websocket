@@ -20,7 +20,7 @@ createRoot(document.getElementById('root')!).render(
           <App />
         </Tooltip.Provider>
       </MotionConfig>
-      <Toaster theme="dark" position="bottom-right" closeButton toastOptions={{ className: 'toast' }} />
+      <Toaster theme="system" position="bottom-right" closeButton toastOptions={{ className: 'toast' }} />
     </QueryClientProvider>
   </StrictMode>,
 )

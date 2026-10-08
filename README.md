@@ -17,14 +17,14 @@
 | **AI** | 구조화 LLM 분석 | OpenAI Structured Outputs로 Pydantic 스키마 강제 + 도메인 분석 절차(SOP) 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
 | **Alert** | 멀티 채널 알림 | Telegram + KakaoTalk 동시 지원 |
 | **Dashboard** | Grafana 모니터링 | 거래대금 Top 10, 실시간 가격, Z-Score, Incidents |
-| **Report** | 리포트 뷰어 (React SPA) | 노드별 분석 + 감지 전후 1분봉 차트(VWAP·볼린저), 5초 폴링 실시간 갱신·토스트, 필터·검색·⌘K, 키보드 탐색 |
+| **Report** | 리포트 뷰어 (React SPA) | 에이전트 결론 헤드라인 + 근거 레일(점수→지표→뉴스→신뢰도→조치), 감지 전후 1분봉 차트(VWAP·볼린저), 5초 폴링 실시간 갱신·토스트, 필터·검색·⌘K, 키보드 탐색. 디자인 기준은 `DESIGN.md` |
 | **API** | REST API | FastAPI 기반 incidents CRUD + Replay mode |
 
 ## Screenshots
 
 ![Report Viewer](docs/images/report-viewer.png)
 
-> 리포트 뷰어(`:8000/app`) — 왼쪽 인시던트 목록(j/k 이동, 심각도·권장 조치 필터), 오른쪽 감지 전후 가격 차트와 노드별 분석. 새 인시던트는 5초 폴링으로 목록 맨 위에 끼어들고 토스트로 알린다.
+> 리포트 뷰어(`:8000/app`) — 왼쪽 인시던트 목록(j/k 이동, 심각도·권장 조치 필터), 오른쪽은 "판정서" 순서로 읽힌다: LLM 에이전트의 결론 한 줄 → 근거 레일(앙상블 점수·발화 지표·뉴스·AI 신뢰도·권장 조치, LangGraph 노드 순서) → 감지 ±3분만 색을 입힌 가격 차트 → 심층 탭. 라이트 기본, OS 다크 모드 자동. 새 인시던트는 5초 폴링으로 목록 맨 위에 끼어들고 토스트로 알린다.
 
 | ⌘K 바로 가기 | KakaoTalk 알림 |
 |---|---|
