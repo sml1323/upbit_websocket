@@ -1,3 +1,5 @@
+import os
+
 import psycopg2
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -22,6 +24,9 @@ logger = setup_logging("scheduler")
 
 DETECTION_INTERVAL_MIN = 5
 PREFILTER_Z_THRESHOLD = 2.0
+# 한 사이클에 LLM 분석·알림까지 가는 최대 건수. 나머지는 감지만 저장(status='skipped').
+# 상한이 없으면 이상 징후 수십 건이 5분마다 OpenAI·SerpAPI(월 100회)를 호출한다.
+MAX_ANALYSES_PER_CYCLE = int(os.getenv("MAX_ANALYSES_PER_CYCLE", "3"))
 
 
 def _build_registry() -> IndicatorRegistry:
@@ -32,6 +37,21 @@ def _build_registry() -> IndicatorRegistry:
     registry.register(RSIIndicator(weight=0.20))
     registry.register(VWAPIndicator(weight=0.25))
     return registry
+
+
+def pick_for_analysis(anomalies: list, limit: int) -> tuple[list, list]:
+    """앙상블 점수 → 발화 지표 수가 높은 순으로 limit 건만 분석 대상으로 고른다."""
+    ranked = sorted(anomalies, key=lambda r: (r.ensemble_score, r.firing_count), reverse=True)
+    return ranked[:limit], ranked[limit:]
+
+
+def _mark_skipped(conn, incident_id: str) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE incidents SET status = 'skipped' WHERE incident_id = %s::uuid",
+            (incident_id,),
+        )
+    conn.commit()
 
 
 # Build once at module load
@@ -70,8 +90,15 @@ def run_cycle():
             logger.info("Ensemble 판정: 이상 없음 — 사이클 완료")
             return
 
-        logger.info("%d건 이상 징후 감지 (ensemble)", len(anomalies))
-        for result in anomalies:
+        to_analyze, skipped = pick_for_analysis(anomalies, MAX_ANALYSES_PER_CYCLE)
+        logger.info(
+            "%d건 이상 징후 감지 (ensemble) — 상위 %d건 분석, %d건 감지만 저장",
+            len(anomalies), len(to_analyze), len(skipped),
+        )
+        for result in skipped:
+            _mark_skipped(conn, save_incident(conn, result))
+
+        for result in to_analyze:
             incident_id = save_incident(conn, result)
             analyze_anomaly(result, incident_id)
 
