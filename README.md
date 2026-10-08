@@ -17,14 +17,18 @@
 | **AI** | 구조화 LLM 분석 | OpenAI Structured Outputs로 Pydantic 스키마 강제 + 도메인 분석 절차(SOP) 프롬프트 + 조건부 라우팅 (LangGraph DAG) |
 | **Alert** | 멀티 채널 알림 | Telegram + KakaoTalk 동시 지원 |
 | **Dashboard** | Grafana 모니터링 | 거래대금 Top 10, 실시간 가격, Z-Score, Incidents |
-| **Report** | 리포트 뷰어 | 각 분석 노드별 응답을 구조화된 HTML로 조회 |
+| **Report** | 리포트 뷰어 (React SPA) | 노드별 분석 + 감지 전후 1분봉 차트(VWAP·볼린저), 5초 폴링 실시간 갱신·토스트, 필터·검색·⌘K, 키보드 탐색 |
 | **API** | REST API | FastAPI 기반 incidents CRUD + Replay mode |
 
 ## Screenshots
 
-| 리포트 목록 (`:8000/reports`) | 리포트 상세 (노드별 분석) | KakaoTalk 알림 |
-|---|---|---|
-| ![Report List](docs/images/report-list.png) | ![Report Detail](docs/images/report-detail.png) | ![KakaoTalk Alert](docs/images/kakao-alert.png) |
+![Report Viewer](docs/images/report-viewer.png)
+
+> 리포트 뷰어(`:8000/app`) — 왼쪽 인시던트 목록(j/k 이동, 심각도·권장 조치 필터), 오른쪽 감지 전후 가격 차트와 노드별 분석. 새 인시던트는 5초 폴링으로 목록 맨 위에 끼어들고 토스트로 알린다.
+
+| ⌘K 바로 가기 | KakaoTalk 알림 |
+|---|---|
+| ![Command Palette](docs/images/report-viewer-cmdk.png) | ![KakaoTalk Alert](docs/images/kakao-alert.png) |
 
 > 상단 Grafana 대시보드(`:3001`)는 거래대금 Top 10, 실시간 가격·거래량, 최근 Incidents 테이블, severity 분포, Incident 타임라인을 한 화면에 보여줍니다.
 
@@ -68,7 +72,7 @@ docker compose up -d
 
 | | URL |
 |---|---|
-| 리포트 뷰어 | http://localhost:8000/reports |
+| 리포트 뷰어 | http://localhost:8000/app |
 | Grafana | http://localhost:3001 |
 | Swagger UI | http://localhost:8000/docs |
 
@@ -82,14 +86,18 @@ docker compose up -d
 | AI Analysis | LangGraph conditional DAG, OpenAI Structured Outputs (Pydantic) |
 | Alert | Telegram Bot, KakaoTalk |
 | API / Dashboard | FastAPI, Grafana |
-| Infra / Test | Docker Compose, pytest (204 tests) |
+| Report Viewer | React 19 + Vite, TanStack Query, recharts, base-ui, cmdk, Sonner, motion, NumberFlow |
+| Infra / Test | Docker Compose, pytest (244 tests) |
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/reports` | 리포트 목록 (HTML) |
-| GET | `/reports/{id}` | 리포트 상세 - 노드별 분석 (HTML) |
+| GET | `/app` | 리포트 뷰어 (React SPA, `frontend/dist`) |
+| GET | `/api/incidents` | 뷰어용 목록 — 노드 출력을 파싱해 권장 조치·신뢰도·원인을 평평하게 |
+| GET | `/api/incidents/{id}` | 뷰어용 상세 — 시장·뉴스·리포트 노드 출력 + 지표 |
+| GET | `/api/incidents/{id}/candles` | 감지 전후 1분봉 + VWAP·볼린저 밴드 |
+| GET | `/reports` | 리포트 목록 (서버 렌더 HTML, 구버전) |
 | GET | `/incidents` | Incident 목록 (JSON) |
 | GET | `/incidents/{id}` | Incident 상세 (JSON) |
 | POST | `/replay` | 과거 시점 이상 감지 재실행 |
@@ -120,7 +128,8 @@ src/
 │   ├── report_agent.py    # Report synthesis node
 │   └── tools/             # query_market, search_news
 ├── api/
-│   └── main.py            # FastAPI + HTML 리포트 뷰어
+│   ├── main.py            # FastAPI + HTML 리포트 뷰어(구버전) + SPA 서빙
+│   └── web.py             # React 뷰어용 /api 엔드포인트
 ├── alerts/
 │   ├── telegram.py        # Telegram Bot 알림
 │   └── kakao.py           # KakaoTalk 나에게 보내기
@@ -158,8 +167,23 @@ src/
 
 ```bash
 uv sync                       # pyproject.toml + uv.lock 기준으로 설치 (테스트 도구 포함)
-uv run pytest tests/ -v       # 204 passed
+uv run pytest -q -p no:cacheprovider   # 244 passed
 ```
+
+## Report Viewer 개발
+
+```bash
+# 데모 데이터 — E1 평가셋 10건의 실제 노드 출력을 source='demo' 로 넣는다
+DB_HOST=localhost uv run python scripts/seed_demo_incidents.py
+DB_HOST=localhost uv run python scripts/seed_demo_incidents.py --drip   # 사례 1건을 지웠다 다시 넣어 감지 → 분석 완료 흐름 재현 (실시간 데모)
+
+# API + 프론트 개발 서버 (Vite 가 /api 를 API 로 프록시)
+DB_HOST=localhost uv run uvicorn src.api.main:app --port 8010
+cd frontend && pnpm install && pnpm dev       # http://localhost:5173/app/
+pnpm build                                     # frontend/dist → API 가 /app 에서 서빙 (Docker 는 Dockerfile.api 에서 빌드)
+```
+
+단축키: `j`/`k` 이동 · `1`~`4` 탭 · `/` 검색 · `⌘K` 바로 가기
 
 ## Docs
 

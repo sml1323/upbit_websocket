@@ -1,17 +1,20 @@
 import json
 import html
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import UUID
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.config import get_db_dsn, setup_logging
 from src.detector.anomaly import Anomaly, detect_anomalies, save_incident
 from src.agent.graph import analyze_anomaly
+from src.api.web import router as viewer_router
 
 logger = setup_logging("api")
 
@@ -22,6 +25,17 @@ app = FastAPI(
     description="Upbit 시세 이상 감지 + 구조화 LLM 분석 API",
     version="0.2.0",
 )
+app.include_router(viewer_router)
+
+# React 리포트 뷰어 — `cd frontend && pnpm build` 결과물. 빌드 전이면 마운트하지 않는다.
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if FRONTEND_DIST.is_dir():
+    app.mount("/app", StaticFiles(directory=FRONTEND_DIST, html=True), name="viewer")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/app/" if FRONTEND_DIST.is_dir() else "/reports")
 
 
 def _get_conn():

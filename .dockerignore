@@ -1,0 +1,8 @@
+# 빌드 컨텍스트를 가볍게 — 프론트는 컨테이너 안에서 새로 설치·빌드한다
+**/node_modules
+frontend/dist
+.venv
+.git
+.gstack
+scratch
+graphify-out

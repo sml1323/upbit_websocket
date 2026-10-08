@@ -1,3 +1,13 @@
+# 1단계: React 리포트 뷰어 빌드 (frontend/ → frontend/dist)
+FROM node:22-slim AS frontend
+WORKDIR /frontend
+RUN corepack enable
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY frontend/ ./
+RUN pnpm build
+
+# 2단계: API — 빌드 결과를 /app 경로로 서빙 (src/api/main.py 의 FRONTEND_DIST)
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -7,5 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ src/
 COPY .env* ./
+COPY --from=frontend /frontend/dist frontend/dist
 
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
